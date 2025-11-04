@@ -40,6 +40,10 @@ SACA consists of three core modules (aligned with Section 4 of the paper):
   * **Supply Function**: $S_k^t(p_k^t) = N_s^t \cdot a_k^t \cdot F_{sk}(p)$ (available seats allocated to destination $k$).
 
 * Determines accepted orders as $O_k^t = \min(D_k^t, S_k^t)$.
+* In the provided SACA-ori.py simulation, we instantiate:
+  * $w_k = \dfrac{\text{dist\_max} + \text{dist\_min} - \text{dist}_k}{\text{dist\_max}}$
+  * Demand probability: $F_{pk}(p) = 1 - w_k \cdot p^2$, hence $D_k^t = N_{pk}^t \cdot F_{pk}(p)$
+  * Supply factor: $F_{sk}(p) = w_k \cdot p^2$, hence $S_k^t = N_s^t \cdot a_k^t \cdot F_{sk}(p)$
 
 ### 2.2 Trajectory Pricing with SAC
 
@@ -56,10 +60,8 @@ SACA consists of three core modules (aligned with Section 4 of the paper):
 
 
 * **Encoder**: Embeds destination coordinates into hidden states.
-
-* **Attention Layers**: Uses Multi-Head Attention (MHA) + Feed-Forward (FF) layers, with Batch Normalization (BN) replacing Layer Normalization.
-
-* **Decoder**: Selects destinations via softmax-weighted relevance scoring, satisfying capacity/loop constraints (buses return to departure station).
+* **Attention Layers**: Uses Multi-Head Attention (MHA) + Feed-Forward (FF) layers with Layer Normalization (LayerNorm).
+* **Decoder/Router**: Assigns the closest orders within capacity, then plans a greedy route by ranking destinations using self-attention similarity; buses return to the departure station.
 
 ## 3. Dataset
 
@@ -89,37 +91,31 @@ We use the **Didi Chuxing GAIA Initiative** dataset (Chengdu city ride-hailing o
 > : Access the dataset via the 
 >
 > [Didi GAIA Initiative](https://outreach.didichuxing.com/)
+>
+> The provided SACA-ori.py uses a synthetic simulation environment:
+> - Destination coordinates are sampled around a fixed departure station.
+> - Potential demand per destination is generated from a Poisson process with mild temporal fluctuation.
+> You may still follow the data processing pipeline to reproduce paper-level experiments with the real dataset; however, running SACA-ori.py does not require the dataset.
 
 ## 4. Environment Setup
 
-### Hardware (as in the paper)
-
-
-
-* CPU: AMD Ryzen 7-5800H (8 cores, 3.20 GHz)
-
-* GPU: NVIDIA GeForce RTX 3060 Ti
-
-* RAM: 16GB+ (recommended)
+### Hardware
+- Apple Silicon (Metal Performance Shaders, MPS) supported by default
+- CPU or NVIDIA GPU (CUDA) also supported
+- 16GB+ RAM recommended
 
 ### Software
-
-
-
-* Python 3.8
-
-* Required Libraries:
-
-
-
+- Python 3.11
+- PyTorch 2.9.0
+- Required Libraries:
 ```
-pip install torch torchvision torchaudio  # For SAC and Transformer
-
-pip install numpy pandas scikit-learn    # Data processing & clustering
-
-pip install matplotlib seaborn           # Visualization
-
-pip install tqdm                         # Progress tracking
+pip install torch
+pip install numpy scipy
+pip install matplotlib
+```
+- Optional (for dataset preprocessing & extended experiments):
+```
+pip install pandas scikit-learn seaborn tqdm
 ```
 
 ## 5. Experimental Results
@@ -142,8 +138,26 @@ Key results (reproduced from Table 1 in the paper) for 10/20 buses:
 * SACA achieves **higher revenue** than baselines by balancing demand-supply and route efficiency.
 
 * SACA reduces total travel distance compared to PODP+L2i (avoids detours from improper orders).
+> Note: The numbers in the table are from the paper. The default simulation in SACA-ori.py will not match them exactly without careful calibration of the environment and hyperparameters.
 
-## 6. Citation
+## 6. How to Run
+- Quick start (simulation):
+```
+python SACA-ori.py
+```
+- The training log prints per-episode averages:
+  - Avg Reward, Avg Revenue, Avg ORR, Avg Distance (km)
+- Early stopping is enabled based on a moving-window criterion.
+
+## 7. Configuration
+- Edit the Config class in SACA-ori.py to change:
+  - num_destinations, bus_capacity, bus_speed, beta_d
+  - time_slots_per_episode, lambda_or (reward weighting)
+  - SAC hyperparameters: gamma, tau, lr, hidden_dim, batch_size, etc.
+- Device selection is automatic:
+  - MPS > CUDA > CPU (depending on availability)
+
+## 8. Citation
 
 If you use this code or reference the paper, please cite:
 
@@ -163,7 +177,7 @@ If you use this code or reference the paper, please cite:
 }
 ```
 
-## 7. Acknowledgements
+## 9. Acknowledgements
 
 This work is supported by:
 
