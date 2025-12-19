@@ -7,7 +7,7 @@ class config:
     BUS_SIZE = 50 # Bus的容量
     FILE_PATH = BASE.parent / "find_station" / "stations_30" / "bus_stations.txt" # 公交站点文件路径
     STATIONNUM = [16, 17] # 一次发车，经停站点数量范围
-    TIANFUPOS = [104.444731, 30.323036] # 天府机场经纬度
+    TIANFUPOS = [104.06, 30.67] # 天府机场经纬度
     DATANUM = 1024 # 数据集大小
 
 def readbusstations(file_path):
@@ -352,9 +352,10 @@ def generate_single_data(numstations):
     print(f"最佳路径 (站点索引): {bestroute}")
     print(f"最小总乘客时间 (Cost): {bestcost:.4f}")
     print(f"最小平均乘客时间: {(bestcost / BUS_SIZE):.4f}")
+    return stations, passengers, TIANFUPOS, bestroute, bestcost
 
 if __name__ == "__main__":
     # save()
-    numstations = 5
+    numstations = 18
     generate_single_data(numstations)
 

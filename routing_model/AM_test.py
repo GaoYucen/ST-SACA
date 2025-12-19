@@ -1,7 +1,17 @@
 import torch
 import numpy as np
-from AM import AttentionRouteModel, calculate_avg_passenger_distance, evaluate_model_cost
-from AM import load_supervised_data
+
+# When this module is imported as part of the `routing_model` package
+# (e.g., `from routing_model.AM_test import presingle`), absolute imports like
+# `from AM import ...` will fail because `AM` is not a top-level module.
+# Use relative imports within the package.
+from .AM import (
+    AttentionRouteModel,
+    calculate_avg_passenger_distance,
+    evaluate_model_cost,
+    load_supervised_data,
+)
+
 import os, pathlib
 BASEPATH = pathlib.Path(__file__).resolve().parent
 
@@ -77,13 +87,19 @@ def presingle(s):
     # 若需要查看按照该顺序的坐标
     ordered_coords = sample["loc"][pred_local_order]
     print("按预测顺序的坐标:\n", ordered_coords)
+    return pred_local_order, avg_dist
 
 if __name__ == "__main__":
-    eval()
+    # eval()
 
     # sample = {
     # "loc": np.array([[104.075698, 30.695897], [104.141627, 30.628662], [104.07042, 30.65607], [104.05706, 30.7635], [104.103498, 30.706014]], dtype=np.float32),
     # "weight": np.array([7, 6, 9, 16, 12], dtype=np.float32),
     # "start": np.array([104.44473, 30.323036], dtype=np.float32),
     # }
-    # presingle(sample)
+    sample = {
+        "loc": np.array([[104.103498, 30.706014], [104.13192, 30.7533], [104.02908, 30.68183], [104.06718, 30.71307], [104.04413, 30.70977], [104.05309, 30.64329], [104.07042, 30.65607], [104.06094, 30.6717], [104.11448, 30.65202], [104.075863, 30.668877]], dtype=np.float32),
+        "weight": np.array([4, 6, 8, 4, 9, 10, 3, 2, 2, 2], dtype=np.float32),
+        "start": np.array([104.44473, 30.323036], dtype=np.float32)
+    }
+    presingle(sample)

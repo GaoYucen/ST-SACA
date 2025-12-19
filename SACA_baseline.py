@@ -26,9 +26,13 @@ class Config:
         self.num_destinations = 30  # 论文中聚类得到的30个目的地
         self.bus_capacity = 30  # 公交容量（论文Section V.B）
         self.bus_speed = 30  # 公交速度（km/h）
-        self.beta_d = 0.1  # 单位距离成本（从 0.001 提高到 0.1，增加距离对成本的影响）
+        self.beta_d = 0.15  # 单位距离成本（从 0.001 提高到 0.1，增加距离对成本的影响）
         self.price_range = [0.0, 1.0]  # 价格范围（论文Section V.B）
         self.time_slot_duration = 1.0  # 时间步时长（小时）
+        # 波动振幅
+        self.demand_fluctuation = 10.0  # 潜在需求波动振幅
+        # 波动频率
+        self.demand_frequency = 1.0  # 潜在需求波动频率
 
         # SAC算法参数（论文Section IV.B）
         self.gamma = 0.99  # 折扣因子
@@ -175,7 +179,7 @@ class BusBookingEnv:
         self.update_bus_state(bus_routes)
 
         # 7. 生成下一时间步的潜在需求（模拟需求波动）
-        self.N_p = np.random.poisson(20 + np.sin(len(self.time_slots) * 0.5), self.config.num_destinations)
+        self.N_p = np.random.poisson(20 + self.config.demand_fluctuation * np.sin(len(self.time_slots) * self.config.demand_frequency), self.config.num_destinations)
         self.time_slots.append(len(self.time_slots) + 1)
 
         # 8. 计算奖励与终止状态
@@ -827,7 +831,7 @@ def train_saca(config, run_name=None):
 
     # 保存训练日志数据为 CSV (可读格式)
     import csv
-    csv_file = log_dir / f'training_log_{timestamp}.csv'
+    csv_file = log_dir / f'mlp_training_log_{timestamp}.csv'
     with open(csv_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         # 获取所有键
@@ -900,14 +904,14 @@ def train_saca(config, run_name=None):
     plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plot_file = log_dir / f'training_results_{timestamp}.png'
-    plt.savefig(plot_file, dpi=300) # 保存高清图片
-    print(f"Training results plot saved to '{plot_file}'")
-    # plt.show()
+    # plot_file = log_dir / f'training_results_{timestamp}.png'
+    # plt.savefig(plot_file, dpi=300) # 保存高清图片
+    # print(f"Training results plot saved to '{plot_file}'")
+    # # plt.show()
 
-    model_file = param_dir / f"sac_bus_booking_{timestamp}.pth"
-    torch.save(sac.state_dict(), model_file)
-    print(f"Model saved to '{model_file}'")
+    # model_file = param_dir / f"sac_bus_booking_{timestamp}.pth"
+    # torch.save(sac.state_dict(), model_file)
+    # print(f"Model saved to '{model_file}'")
 
     return sac, env
 

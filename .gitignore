@@ -1,3 +1,14 @@
 previous_version/
 __pycache__/
 .DS_Store
+
+# 避免log文件夹
+log/
+
+# 避免temp文件夹
+temp/
+
+# 避免输出的模型参数文件
+*_model.pth
+*.pt
+
