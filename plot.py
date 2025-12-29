@@ -5,31 +5,45 @@ import os
 
 def plot_comparison():
     log_dir = "log"
+    read_dir = "figure/compare"
     max_episodes = 80  # 统一截断量，只绘制前80条数据
+    
+    # ====== 字体大小参数（统一调整） ======
+    FONT_SIZE = 20  # 修改这个值即可调整所有字体大小
+    
+    # 应用全局字体设置
+    plt.rcParams.update({
+        'font.size': FONT_SIZE,           # 基础字体大小
+        'axes.titlesize': FONT_SIZE + 2,  # 标题稍大
+        'axes.labelsize': FONT_SIZE,  # 坐标轴标签
+        'xtick.labelsize': FONT_SIZE, # X轴刻度
+        'ytick.labelsize': FONT_SIZE, # Y轴刻度
+        'legend.fontsize': FONT_SIZE - 8, # 图例
+    })
     
     # 定义需要对比的模型及其对应的文件前缀和绘图样式
     # 格式: (文件前缀模式, 图例标签, 颜色, 线型)
     models_config = [
-        ("saca_training_log_*.csv", "SACA (Spatial)", "red", "-"),
-        ("mlp_training_log_*.csv", "MLP (Baseline)", "gray", "--"),
+        ("saca_training_log_*.csv", "ST-SACA", "red", "-"),
+        ("mlp_training_log_*.csv", "SACA", "gray", "--"),
         ("grc_elg_training_log_*.csv", "GRC-ELG", "blue", "-."),
         ("jdrl_training_log_*.csv", "JDRL-POMO", "green", ":")
     ]
     
     data_to_plot = []
     
-    print("Searching for log files in:", log_dir)
+    print("Searching for log files in:", read_dir)
     
     for pattern, label, color, linestyle in models_config:
-        search_path = os.path.join(log_dir, pattern)
+        search_path = os.path.join(read_dir, pattern)
         files = glob.glob(search_path)
         
         if not files:
             print(f"Warning: No files found for pattern '{pattern}'")
             continue
             
-        # 获取最新的文件
-        latest_file = sorted(files)[-1]
+        # 获取最早的文件
+        latest_file = sorted(files)[0]
         print(f"Found for {label}: {latest_file}")
         
         try:
@@ -53,7 +67,7 @@ def plot_comparison():
 
     # 绘图指标
     metrics = ["total_reward", "revenue", "cost", "orr"]
-    titles = ["Average Reward", "Average Revenue", "Average Cost", "Average ORR"]
+    titles = ["Average Reward", "Average Profit", "Average Cost", "Average ORR"]
     
     # 计算并打印对比表格
     print("\n" + "="*60)
@@ -100,7 +114,9 @@ def plot_comparison():
                     percentage = (val / baseline_value) * 100
                 metric_column.append(f"{val:.2f} ({percentage:.1f}%)")
         
-        summary_data[metric] = metric_column
+        # 将 'revenue' 的 key 改为 'profit'
+        key_name = "profit" if metric == "revenue" else metric
+        summary_data[key_name] = metric_column
 
     # 创建汇总 DataFrame
     model_names = [item["label"] for item in data_to_plot]
@@ -126,51 +142,55 @@ def plot_comparison():
         
         plt.title(titles[i])
         plt.xlabel("Episode")
-        plt.ylabel(metric)
+        # 如果是 revenue 指标，Y轴标签显示为 Profit
+        ylabel = "Profit" if metric == "revenue" else metric
+        plt.ylabel(ylabel)
         plt.legend()
         plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
     
     # 保存图片 (已注释，改为分别保存)
-    output_filename = "comparison_result_4_models.png"
-    # 添加时间戳
-    timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
-    output_filename = f"comparison_result_4_models_{timestamp}.png"
-    output_path = os.path.join(log_dir, output_filename)
-    plt.savefig(output_path, dpi=300)
-    print(f"\nComparison plot saved to '{output_path}'")
+    # output_filename = "comparison_result_4_models.png"
+    # # 添加时间戳
+    # timestamp = pd.Timestamp.now().strftime("%Y%m%d_%H%M%S")
+    # output_filename = f"comparison_result_4_models_{timestamp}.png"
+    # output_path = os.path.join(log_dir, output_filename)
+    # # plt.savefig(output_path, dpi=300)
+    # print(f"\nComparison plot saved to '{output_path}'")
     
     # 显示图片 (如果在支持显示的终端/IDE中)
     plt.show()
     # plt.close()
 
     # 分别保存四个指标的图片
-    # print("\nSaving separate plots for each metric...")
-    # for i, metric in enumerate(metrics):
-    #     plt.figure(figsize=(10, 6))
+    print("\nSaving separate plots for each metric...")
+    for i, metric in enumerate(metrics):
+        plt.figure(figsize=(10, 6))
         
-    #     for item in data_to_plot:
-    #         df = item["df"]
-    #         if metric in df.columns:
-    #             plt.plot(df["Episode"], df[metric], 
-    #                      label=item["label"], 
-    #                      color=item["color"], 
-    #                      linestyle=item["linestyle"], 
-    #                      linewidth=2)
+        for item in data_to_plot:
+            df = item["df"]
+            if metric in df.columns:
+                plt.plot(df["Episode"], df[metric], 
+                         label=item["label"], 
+                         color=item["color"], 
+                         linestyle=item["linestyle"], 
+                         linewidth=2)
         
-    #     plt.title(titles[i])
-    #     plt.xlabel("Episode")
-    #     plt.ylabel(metric)
-    #     plt.legend()
-    #     plt.grid(True, alpha=0.3)
-    #     plt.tight_layout()
+        # plt.title(titles[i])
+        plt.xlabel("Episode")
+        # 如果是 revenue 指标，Y轴标签显示为 Profit
+        ylabel = "Profit" if metric == "revenue" else metric
+        plt.ylabel(ylabel)
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
         
-    #     single_output_filename = f"comparison_{metric}.png"
-    #     single_output_path = os.path.join(log_dir, single_output_filename)
-    #     plt.savefig(single_output_path, dpi=600)
-    #     print(f"Saved '{single_output_path}'")
-    #     plt.close()
+        single_output_filename = f"comparison_{metric}.pdf"
+        single_output_path = os.path.join(read_dir, single_output_filename)
+        plt.savefig(single_output_path, dpi=600)
+        print(f"Saved '{single_output_path}'")
+        plt.close()
 
 if __name__ == "__main__":
     plot_comparison()

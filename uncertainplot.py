@@ -29,8 +29,8 @@ UNCERTAINTY_CONFIGS = [
 # 算法定义 (标签: 文件名模式)
 # 这里的 Key 将作为图例名称
 ALGO_MAP = {
-    "SACA (Spatial)": "saca_training_log_*.csv",
-    "MLP (Baseline)": "mlp_training_log_*.csv",
+    "ST-SACA": "saca_training_log_*.csv",
+    "SACA": "mlp_training_log_*.csv",
     "GRC-ELG": "grc_elg_training_log_*.csv",
     "JDRL-POMO": "jdrl_training_log_*.csv"
 }
@@ -38,8 +38,8 @@ ALGO_MAP = {
 # 算法对应的绘图风格 (严格对齐 plot.py)
 # Key 必须与 ALGO_MAP 的 Key 一致
 ALGO_STYLES = {
-    "SACA (Spatial)": {"color": "red", "linestyle": "-"},
-    "MLP (Baseline)": {"color": "gray", "linestyle": "--"},
+    "ST-SACA": {"color": "red", "linestyle": "-"},
+    "SACA": {"color": "gray", "linestyle": "--"},
     "GRC-ELG":        {"color": "blue", "linestyle": "-."},
     "JDRL-POMO":      {"color": "green", "linestyle": ":"}
 }
@@ -167,7 +167,7 @@ def plot_performance():
 
     plt.tight_layout()
     output_path = os.path.join(LOG_DIR, "uncertainty_comparison_by_config.png")
-    plt.savefig(output_path, dpi=300)
+    # plt.savefig(output_path, dpi=300)
     print(f"\nPlot saved to: {output_path}")
     plt.close()
 
@@ -222,7 +222,8 @@ def plot_performance():
                 if pd.isna(x):
                     return "-"
                 loss_pct = (max_val - x) / max_val * 100 if max_val != 0 else 0
-                return f"{x:.2f} (-{loss_pct:.1f}%)"
+                # return f"{x:.2f} ({loss_pct:.1f}%)"
+                return f"{x:.2f}"
             
             formatted_df[col] = numeric_col.apply(format_with_loss)
 
@@ -237,11 +238,11 @@ def plot_performance():
     gap_rows = []
 
     for idx in summary_df.index:
-        saca_val = float(summary_df.loc[idx, "SACA (Spatial)"])
+        saca_val = float(summary_df.loc[idx, "ST-SACA"])
         
-        # 选出当前行中，除 SACA 之外的最强 baseline
+        # 选出当前行中，除 ST-SACA 之外的最强 baseline
         baseline_vals = summary_df.loc[idx, [
-            "MLP (Baseline)",
+            "SACA",
             "GRC-ELG",
             "JDRL-POMO"
         ]].astype(float)
@@ -251,7 +252,7 @@ def plot_performance():
         gap_pct = (saca_val - best_baseline) / abs(best_baseline) * 100
         
         gap_rows.append({
-            "SACA (Spatial)": f"{saca_val:.2f}",
+            "ST-SACA": f"{saca_val:.2f}",
             "Best Baseline": f"{best_baseline:.2f}",
             "Gap (%)": f"{gap_pct:+.1f}%"
         })
@@ -272,7 +273,7 @@ def plot_performance():
 # ==========================================
 if __name__ == "__main__":
     # 1. 运行实验 (已注释，直接使用现有数据)
-    run_experiments()
+    # run_experiments()
     
     # 2. 绘图
     plot_performance()

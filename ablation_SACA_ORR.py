@@ -29,7 +29,6 @@ class Config:
         self.beta_d = 0.15  # 单位距离成本（从 0.001 提高到 0.1，增加距离对成本的影响）
         self.price_range = [0.0, 1.0]  # 价格范围（论文Section V.B）
         self.time_slot_duration = 1.0  # 时间步时长（小时）
-        self.num_buses = 10  # 初始公交数量
         # 波动振幅
         self.demand_fluctuation = 10.0  # 潜在需求波动振幅
         # 波动频率
@@ -40,7 +39,7 @@ class Config:
         # SAC算法参数（论文Section IV.B）
         self.gamma = 0.99  # 折扣因子
         self.tau = 0.005  # 目标网络软更新系数
-        self.lr = 3e-4  # 学习率
+        self.lr = 3e-3  # 学习率
         self.alpha = 0.2  # 熵正则化系数
         self.hidden_dim = 256  # 网络隐藏层维度
         self.batch_size = 256  # 经验回放批次大小
@@ -52,7 +51,7 @@ class Config:
         self.embedding_dim = 128  # 目的地嵌入维度
 
         # 奖励函数参数（论文公式8）
-        self.lambda_or = 4.0  # ORR权重（论文敏感性分析最优值）
+        self.lambda_or = 0.1  # ORR权重（论文敏感性分析最优值）
 
         # 训练参数
         self.episodes = 100  # 训练轮次
@@ -100,7 +99,7 @@ class BusBookingEnv:
         self.time_slots = []
         self.current_p = np.zeros(self.config.num_destinations)
         # 初始公交状态：{公交ID: [剩余返回时间, 容量]}
-        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(self.config.num_buses)}  # 初始公交
+        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(10)}  # 初始10辆公交
         # 初始潜在需求（每目的地的潜在乘客数，模拟夜间波动）
         self.N_p = np.random.poisson(self.config.demand_amplitude, self.config.num_destinations)  # 泊松分布模拟需求
         return self.get_state()
@@ -942,7 +941,7 @@ def train_saca(config, run_name=None):
 
     # 保存训练日志数据为 CSV (可读格式)
     import csv
-    csv_file = log_dir / f'saca_training_log_{timestamp}.csv'
+    csv_file = log_dir / f'ablation_wo_ORR_{timestamp}.csv'
     with open(csv_file, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         # 获取所有键

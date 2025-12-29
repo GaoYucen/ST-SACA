@@ -316,7 +316,7 @@ class BusBookingEnv:
         next_state = self.get_state()
 
         info = {
-            "revenue": revenue,
+            "revenue": revenue - cost_total,
             "orr": ORR_t,
             "cost": cost_total,
             "total_distance": cost_total / self.config.beta_d,

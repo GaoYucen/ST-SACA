@@ -29,6 +29,7 @@ class Config:
         self.beta_d = 0.15  # 单位距离成本（从 0.001 提高到 0.1，增加距离对成本的影响）
         self.price_range = [0.0, 1.0]  # 价格范围（论文Section V.B）
         self.time_slot_duration = 1.0  # 时间步时长（小时）
+        self.num_buses = 10  # 初始公交数量
         # 波动振幅
         self.demand_fluctuation = 10.0  # 潜在需求波动振幅
         # 波动频率
@@ -97,7 +98,7 @@ class BusBookingEnv:
         self.time_slots = []
         self.current_p = np.zeros(self.config.num_destinations)
         # 初始公交状态：{公交ID: [剩余返回时间, 容量]}
-        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(10)}  # 初始10辆公交
+        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(self.config.num_buses)}  # 初始公交
         # 初始潜在需求（每目的地的潜在乘客数，模拟夜间波动）
         self.N_p = np.random.poisson(20, self.config.num_destinations)  # 泊松分布模拟需求
         return self.get_state()

@@ -12,3 +12,6 @@ temp/
 *_model.pth
 *.pt
 
+# 避免pdf图片和中间文件
+*.pdf
+*.csv
