@@ -1,11 +1,85 @@
-import matplotlib.pyplot as plt
-import pandas as pd
 import glob
 import os
+from dataclasses import dataclass
+from typing import Iterable, Optional, Sequence, Tuple
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
 import SACA
 import tqdm
 
-def train_saca_model(x=None):
+
+@dataclass(frozen=True)
+class PlotCurveStyle:
+    """单条曲线样式配置。"""
+
+    color: str
+    marker: str
+    linestyle: str = "-"
+    linewidth: float = 2.0
+    label: str = ""
+
+
+@dataclass(frozen=True)
+class PlotStyle:
+    """本脚本的绘图统一样式配置（便于论文图调参）。"""
+
+    # 画布
+    figsize: Tuple[float, float] = (10, 6)
+
+    # 字号
+    label_fontsize: int = 25
+    legend_fontsize: int = 20
+
+    # 网格
+    show_grid: bool = True
+    grid_alpha: float = 0.3
+
+    # 曲线样式
+    orr_curve: PlotCurveStyle = PlotCurveStyle(
+        color="tab:orange", marker="o", linestyle="-", linewidth=2.0, label="ORR"
+    )
+    profit_curve: PlotCurveStyle = PlotCurveStyle(
+        color="tab:green", marker="s", linestyle="--", linewidth=2.0, label="Profit"
+    )
+
+    # 轴与图例
+    x_label: str = "Weight of ORR"
+    y1_label: str = "Average ORR"
+    y2_label: str = "Average Profit"
+    legend_loc: str = "lower right"
+
+    # 保存
+    save_dpi: int = 600
+    save_tight_layout: bool = True
+    save_bbox_inches: str = "tight"
+
+
+@dataclass(frozen=True)
+class PlotConfig:
+    """与日志读取/输出路径相关的配置。"""
+
+    log_dir: str = "figure/parameter"
+    log_glob: str = "saca_training_log_*.csv"
+    output_name: str = "parameter_sensitivity_orr.pdf"
+    expected_files: int = 6
+    tail_n: int = 10
+
+
+def _apply_mpl_style(style: PlotStyle) -> None:
+    """可选：把一些常用字号写入 rcParams，保证后续扩展图也一致。"""
+
+    plt.rcParams.update(
+        {
+            "axes.labelsize": style.label_fontsize,
+            "xtick.labelsize": style.label_fontsize,
+            "ytick.labelsize": style.label_fontsize,
+            "legend.fontsize": style.legend_fontsize,
+        }
+    )
+
+def train_saca_model(x: Optional[Sequence[float]] = None) -> None:
     config = SACA.Config()
     if x is None:
         ORR = [0, 1, 2, 3, 4, 5]
@@ -15,15 +89,23 @@ def train_saca_model(x=None):
         config.lambda_or = orr
         SACA.train_saca(config)
 
-def plot_saca_parameters(x=None):
-    log_dir = "log"
+def plot_saca_parameters(
+    x: Optional[Sequence[float]] = None,
+    *,
+    cfg: PlotConfig = PlotConfig(),
+    style: PlotStyle = PlotStyle(),
+) -> None:
+    _apply_mpl_style(style)
+
     # 获取所有相关的日志文件
-    pattern = os.path.join(log_dir, "saca_training_log_*.csv")
+    pattern = os.path.join(cfg.log_dir, cfg.log_glob)
     files = glob.glob(pattern)
     
-    # 确保至少有6个文件
-    if len(files) < 6:
-        print(f"Error: Expected at least 6 log files, found {len(files)}.")
+    # 确保至少有 expected_files 个文件
+    if len(files) < cfg.expected_files:
+        print(
+            f"Error: Expected at least {cfg.expected_files} log files, found {len(files)}."
+        )
         return
 
     # 按修改时间排序，取最新的6个
@@ -35,15 +117,12 @@ def plot_saca_parameters(x=None):
         date_part, time_part = name.split("_")[-2], name.split("_")[-1]
         return int(f"{date_part}{time_part}")  # 20251218210118
 
-    sorted_files = sorted(files, key=_extract_dt_key, reverse=True)[:6]
+    sorted_files = sorted(files, key=_extract_dt_key, reverse=True)[: cfg.expected_files]
 
     # 如果希望后续 i 对应 lambda_vals 的顺序仍为 0..5（从小到大），则反转成旧->新
     sorted_files = list(reversed(sorted_files))
     
-    if x is None:
-        lambda_vals = [0, 1, 2, 3, 4, 5]
-    else:
-        lambda_vals = x
+    lambda_vals: Sequence[float] = [0, 1, 2, 3, 4, 5] if x is None else x
     orrs = []
     revenues = []
 
@@ -52,11 +131,11 @@ def plot_saca_parameters(x=None):
         print(f"  Lambda={lambda_vals[i]}: {f}")
         try:
             df = pd.read_csv(f)
-            # 取最后10个episode的平均值
+            # 取最后 tail_n 个 episode 的平均值
             if len(df) > 0:
-                last_10 = df.tail(10)
-                orrs.append(last_10["orr"].mean())
-                revenues.append(last_10["revenue"].mean())
+                tail_df = df.tail(cfg.tail_n)
+                orrs.append(tail_df["orr"].mean())
+                revenues.append(tail_df["revenue"].mean())
             else:
                 orrs.append(0)
                 revenues.append(0)
@@ -66,33 +145,52 @@ def plot_saca_parameters(x=None):
             revenues.append(0)
 
     # 开始绘图
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    os.makedirs(cfg.log_dir, exist_ok=True)
+    fig, ax1 = plt.subplots(figsize=style.figsize)
 
     # 绘制 ORR (左轴)
-    color = 'tab:orange'
-    ax1.set_xlabel('Lambda OR (Weight of ORR)')
-    ax1.set_ylabel('Average ORR', color=color, fontsize=12)
-    line1 = ax1.plot(lambda_vals, orrs, color=color, marker='o', linewidth=2, label='ORR')
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.grid(True, alpha=0.3)
+    ax1.set_xlabel(style.x_label)
+    ax1.set_ylabel(style.y1_label, color=style.orr_curve.color, fontsize=style.label_fontsize)
+    line1 = ax1.plot(
+        lambda_vals,
+        orrs,
+        color=style.orr_curve.color,
+        marker=style.orr_curve.marker,
+        linestyle=style.orr_curve.linestyle,
+        linewidth=style.orr_curve.linewidth,
+        label=style.orr_curve.label,
+    )
+    ax1.tick_params(axis="y", labelcolor=style.orr_curve.color)
+    if style.show_grid:
+        ax1.grid(True, alpha=style.grid_alpha)
 
     # 绘制 Revenue (右轴)
     ax2 = ax1.twinx()
-    color = 'tab:green'
-    ax2.set_ylabel('Average Revenue', color=color, fontsize=12)
-    line2 = ax2.plot(lambda_vals, revenues, color=color, marker='s', linestyle='--', linewidth=2, label='Revenue')
-    ax2.tick_params(axis='y', labelcolor=color)
+    ax2.set_ylabel(
+        style.y2_label, color=style.profit_curve.color, fontsize=style.label_fontsize
+    )
+    line2 = ax2.plot(
+        lambda_vals,
+        revenues,
+        color=style.profit_curve.color,
+        marker=style.profit_curve.marker,
+        linestyle=style.profit_curve.linestyle,
+        linewidth=style.profit_curve.linewidth,
+        label=style.profit_curve.label,
+    )
+    ax2.tick_params(axis="y", labelcolor=style.profit_curve.color)
 
     # 合并图例
     lines = line1 + line2
     labels = [l.get_label() for l in lines]
-    ax1.legend(lines, labels, loc='upper center', fontsize=10)
+    ax1.legend(lines, labels, loc=style.legend_loc, fontsize=style.legend_fontsize)
 
-    plt.title("Sensitivity Analysis: Lambda OR vs. ORR & Revenue", fontsize=14)
-    plt.tight_layout()
+    # plt.title("Sensitivity Analysis: Lambda OR vs. ORR & Profit", fontsize=14)
+    if style.save_tight_layout:
+        plt.tight_layout()
     
-    output_path = os.path.join(log_dir, "parameter_sensitivity_orr.pdf")
-    plt.savefig(output_path, dpi=600)
+    output_path = os.path.join(cfg.log_dir, cfg.output_name)
+    plt.savefig(output_path, dpi=style.save_dpi, bbox_inches=style.save_bbox_inches)
     print(f"\nPlot saved to: {output_path}")
     plt.show()
 
