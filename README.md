@@ -1,85 +1,147 @@
-# ST-SACA: Spatial-Temporal Attention-based Soft Actor-Critic for Bus Booking Systems
+# A Spatio-Temporal Adaptive Framework for Dispatching, Routing, and Pricing of Bus-Booking
 
-This repository contains the enhanced code implementation for the journal version (TMC) of the paper **"SACA: An End-to-End Method for Dispatching, Routing, and Pricing of Online Bus-Booking"**. 
+This repository contains the code for **ST-SACA**, a spatio-temporal adaptive extension of SACA for the joint order dispatching, route planning, and trajectory pricing problem in bus-booking systems.
 
-Building upon the conference version (DASFAA), this implementation introduces a **Spatial-Temporal Attention-based State Representation (ST-SAC)** mechanism to significantly improve the agent's ability to capture demand distribution patterns and optimize long-term revenue.
+The paper studies two settings:
 
-## 1. Technique Improvement: ST-SAC
+- **JDRP**: joint dispatching, routing, and pricing under a stationary environment.
+- **R-JDRP**: the robust variant under non-stationary demand uncertainty.
 
-In the original SACA (Baseline), the Actor network used a simple Multi-Layer Perceptron (MLP) to process the state vector. This approach treated each destination station as an independent feature, ignoring the geometric structure of the transportation network.
+ST-SACA keeps the end-to-end SAC plus attention-routing design of SACA, and adds a **Spatio-Temporal Adaptive Actor** that combines station coordinates and real-time demand with self-attention. The goal is to make pricing and dispatching robust to spatial heterogeneity and temporal demand shifts.
 
-**The new ST-SAC (implemented in `SACA.py`) introduces:**
-*   **Spatial-Aware State Representation**: Explicitly models the spatial coordinates $(x, y)$ of each destination along with its real-time demand.
-*   **Self-Attention Mechanism**: Uses a Transformer-based attention layer to extract spatial dependencies between stations, allowing the agent to identify "hotspot clusters" dynamically.
-*   **Performance Gains**: Compared to the baseline, ST-SAC achieves **~33% higher average reward** and **~39.5% higher Order Response Rate (ORR)**.
+## Repository Layout
 
-## 2. Project Structure
-
-The repository is organized as follows:
-
-```
+```text
 .
-├── SACA.py              # [Main] The proposed ST-SAC model with Spatial-Aware Actor
-├── SACA_baseline.py     # [Baseline] The original SAC model with MLP Actor
-├── compare_models.py       # [Script] Automates training of both models and generates comparison plots
-├── routing_model/          # Pre-trained Attention-based Routing Model (AM)
-│   ├── AM.py               # Attention Model architecture
-│   └── model/              # Saved weights for the routing model
-├── find_station/           # Station clustering scripts (DBSCAN, PAM)
-├── log/                    # [Output] Stores training logs (.csv) and result plots (.png)
-├── param/                  # [Output] Stores trained model parameters (.pth)
-└── README.md               # This file
+├── src/st_saca/
+│   ├── agents/          # ST-SACA and SACA implementations
+│   ├── baselines/       # GRC-ELG and JDRL-POMO baselines
+│   ├── routing/         # Attention routing model and POMO training code
+│   ├── experiments/     # Training, robustness, ablation, sensitivity, speed
+│   ├── analysis/        # Plotting, route visualization, case study
+│   └── preprocessing/   # DBSCAN/PAM station generation utilities
+├── data/stations/       # Included 30 Chengdu destination station medoids
+├── checkpoints/routing/ # Local routing checkpoints, ignored by git
+├── outputs/             # Local logs and figures, ignored by git
+└── SACA.py, train.py    # Thin compatibility wrappers
 ```
 
-## 3. Key Components
+The DiDi Chengdu GAIA raw order dataset is **not bundled**. The repository includes only the 30 station medoids used by the simulator.
 
-### 3.1 Environment (`BusBookingEnv`)
-*   **Dynamic Demand**: Simulates passenger demand using Poisson distribution with time-varying intensity.
-*   **Realistic Routing**: Integrates a pre-trained `AttentionRouteModel` to solve the Vehicle Routing Problem (VRP) for dispatched buses.
-*   **Cost Model**: Calculates operational costs based on real-world Haversine distance (`beta_d=0.1`).
+## Installation
 
-### 3.2 Spatial Actor (`SpatialActor`)
-*   **Input**: State vector + Station Coordinates.
-*   **Architecture**: `Input Embedding` -> `Self-Attention Layer` -> `Global Pooling` -> `Fusion with Bus State` -> `Policy Head`.
-*   **Output**: Continuous actions for Pricing ($P$) and Seat Allocation ($A$).
-
-## 4. Usage
-
-### Prerequisites
-*   Python 3.8+
-*   PyTorch
-*   NumPy, Pandas, Matplotlib, Scipy
-
-### Running the Models
-
-**1. Train the Proposed ST-SAC Model:**
 ```bash
-python SACA.py
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
 ```
-*   Results will be saved to `log/training_results_spatial_[timestamp].png` and `log/training_log_spatial_[timestamp].csv`.
-*   Model weights will be saved to `param/sac_bus_booking_spatial_[timestamp].pth`.
 
-**2. Train the Baseline Model:**
+Optional dependencies:
+
 ```bash
-python SACA_baseline.py
+pip install wandb scikit-learn-extra jupyter
 ```
 
-**3. Run Comparison Experiment:**
-To automatically train both models and generate a comparison plot:
+The routing module expects local files:
+
+```text
+checkpoints/routing/best_model.pth
+checkpoints/routing/normalization_stats.pt
+```
+
+These files are ignored by git. You can place them there, or override paths with:
+
 ```bash
-python compare_models.py
+set ST_SACA_ROUTING_CKPT_DIR=C:\path\to\routing_checkpoints
+set ST_SACA_OUTPUT_DIR=C:\path\to\outputs
+set ST_SACA_DATA_DIR=C:\path\to\data
 ```
-*   This will generate `log/comparison_result.png` showing the performance gap between ST-SAC and the Baseline.
 
-## 5. Performance Comparison
+## Quick Start
 
-Recent experiments (100 episodes) show significant improvements:
+Train ST-SACA:
 
-| Metric | Baseline (MLP) | **ST-SAC (Spatial)** | Improvement |
-| :--- | :--- | :--- | :--- |
-| **Avg Reward** | 42.08 | **55.97** | **+33.0%** |
-| **Revenue** | 41.48 | **55.12** | **+32.9%** |
-| **ORR** | 15.2% | **21.2%** | **+39.5%** |
-| **Cost** | 10.04 | 12.09	| +20.4% (Reasonably increasing) |
+```bash
+python -m st_saca.experiments.train --method st-saca
+```
 
-*ST-SAC converges faster and learns a more efficient policy that balances high revenue with reasonable operational costs.*
+Run the four-method non-stationary comparison:
+
+```bash
+python -m st_saca.experiments.train --method all --uncertainty-scale 5 --uncertainty-frequency 1
+```
+
+Run ablations:
+
+```bash
+python -m st_saca.experiments.ablation --variant wo-route
+python -m st_saca.experiments.ablation --variant wo-orr
+python -m st_saca.experiments.ablation --variant wo-spatial
+```
+
+Plot comparison curves:
+
+```bash
+python -m st_saca.analysis.plot_comparison
+```
+
+Benchmark inference speed:
+
+```bash
+python -m st_saca.experiments.speed
+```
+
+Legacy commands such as `python SACA.py`, `python SACA_baseline.py`, `python train.py`, and `python plot.py` are preserved as wrappers.
+
+## Paper Results
+
+Stationary setting:
+
+| Bus Count | Method | Profit | ORR | Length |
+| --- | --- | ---: | ---: | ---: |
+| 10 | DPEA+SubBus | 342.2 | 0.13 | 57.1 |
+| 10 | PODP+L2i | 606.1 | 0.26 | 113.1 |
+| 10 | SACA | 23.25 | 0.10 | 12.17 |
+| 10 | ST-SACA | 38.00 | 0.18 | 17.73 |
+| 20 | DPEA+SubBus | 948.9 | 0.33 | 150.6 |
+| 20 | PODP+L2i | 1410.9 | 0.53 | 242.0 |
+| 20 | SACA | 53.97 | 0.21 | 15.85 |
+| 20 | ST-SACA | 73.35 | 0.28 | 18.51 |
+
+Non-stationary setting with `A=5`, `omega=1`:
+
+| Method | Reward | Profit | Cost | ORR |
+| --- | ---: | ---: | ---: | ---: |
+| SACA | 21.70 | 21.33 | 12.11 | 0.09 |
+| GRC-ELG | 33.34 | 32.68 | 19.21 | 0.16 |
+| JDRL-POMO | 24.86 | 34.14 | 9.65 | 0.09 |
+| ST-SACA | 38.70 | 38.00 | 17.73 | 0.18 |
+
+Ablation:
+
+| Variant | Reward | Profit | Cost | ORR | Distance (km) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| ST-SACA (Full) | 38.70 | 38.00 | 17.73 | 0.18 | 118.23 |
+| w/o Spatial Attention | 20.49 | 20.12 | 12.03 | 0.09 | 80.22 |
+| w/o Learned Route | 26.82 | 26.62 | 9.71 | 0.09 | 64.73 |
+| w/o ORR Reward | 25.98 | 25.98 | 9.91 | 0.09 | 66.05 |
+
+Average inference time per time slot:
+
+| Order Batch Size | 50 | 100 | 200 | 500 |
+| --- | ---: | ---: | ---: | ---: |
+| Inference Time (ms) | 12 | 18 | 26 | 45 |
+
+## Citation
+
+```bibtex
+@misc{gao_st_saca,
+  title  = {A Spatio-Temporal Adaptive Framework for Dispatching, Routing, and Pricing of Bus-Booking},
+  author = {Gao, Yucen and Du, Pengfei and Gao, Xiaofeng and Wang, Bin and Yang, Xiaochun and Chen, Guihai},
+  note   = {Manuscript}
+}
+```
+
+## License
+
+No license file is currently declared for this repository. Please add a license before public redistribution or reuse.

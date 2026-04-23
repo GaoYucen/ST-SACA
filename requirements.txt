@@ -1,0 +1,12 @@
+torch
+numpy
+scipy
+matplotlib
+pandas
+tqdm
+scikit-learn
+
+# Optional:
+# wandb
+# scikit-learn-extra
+# jupyter
