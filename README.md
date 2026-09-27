@@ -2,6 +2,12 @@
 
 This repository contains the code for **ST-SACA**, a spatio-temporal adaptive extension of SACA for the joint order dispatching, route planning, and trajectory pricing problem in bus-booking systems.
 
+## Repository Status
+
+- `main` is the canonical maintained branch.
+- Historical development snapshots are preserved under `archive/dupengfei` and `archive/early-st-saca`.
+- New development should be based on `main`.
+
 The paper studies two settings:
 
 - **JDRP**: joint dispatching, routing, and pricing under a stationary environment.
