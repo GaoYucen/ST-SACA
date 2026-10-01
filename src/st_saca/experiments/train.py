@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from st_saca.experiment_guards import validate_method_selection
 
 import matplotlib.pyplot as plt
 
@@ -37,6 +38,7 @@ def run_method(
 
 
 def _load_method(method: str):
+    validate_method_selection(method)
     if method == "st-saca":
         from st_saca.agents import st_saca as module
 
@@ -69,6 +71,7 @@ def main(
     with the previous ``train.main(A=..., w=...)`` call pattern.
     """
 
+    validate_method_selection(method)
     plt.show = lambda: None
 
     if method == "all":

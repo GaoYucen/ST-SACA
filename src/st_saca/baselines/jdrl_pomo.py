@@ -1,3 +1,5 @@
+from st_saca.experiment_guards import validate_method_selection
+from st_saca.environment_consistency import available_seats, dispatch_and_account, advance_fleet
 import math
 import torch
 import torch.nn as nn
@@ -25,6 +27,7 @@ class Config:
         # --- 业务场景参数 (保持与 SACA 一致) ---
         self.departure_station = np.array([104.06, 30.67])
         self.num_destinations = 30
+        self.num_buses = 10
         self.bus_capacity = 30
         self.bus_speed = 30
         self.beta_d = 0.15
@@ -116,6 +119,7 @@ class AttentionLayer(nn.Module):
 class AttentionDispatcherRouter(nn.Module):
     """注意力派单与路径规划模块（复用 SACA）"""
     def __init__(self, config, dest_coords, dist_k):
+        validate_method_selection("jdrl-pomo")
         super().__init__()
         self.config = config
         self.dest_coords = dest_coords
@@ -189,6 +193,7 @@ class AttentionDispatcherRouter(nn.Module):
 
 class BusBookingEnv:
     def __init__(self, config):
+        validate_method_selection("jdrl-pomo")
         self.config = config
         self.init_destinations()
         self.dispatcher = AttentionDispatcherRouter(
@@ -210,7 +215,7 @@ class BusBookingEnv:
     def reset(self):
         self.time_slots = []
         self.current_p = np.zeros(self.config.num_destinations)
-        self.num_buses = 10
+        self.num_buses = self.config.num_buses
         self.buses = {i: [0.0, self.config.bus_capacity] for i in range(self.num_buses)}
         self.N_p = np.random.poisson(20, self.config.num_destinations)
         return self.get_state()
@@ -227,7 +232,7 @@ class BusBookingEnv:
         return self.N_p * F_pk
 
     def supply_function(self, p_k, a_k):
-        self.N_s = sum([bus[1] for bus in self.buses.values()])
+        self.N_s = available_seats(self.buses)
         if self.N_s == 0:
             return np.zeros_like(p_k)
         multiplier = (self.dist_max + self.dist_min - self.dist_k) / self.dist_max
@@ -250,80 +255,41 @@ class BusBookingEnv:
         return np.sum(6371.0 * c)
 
     def update_bus_state(self, bus_routes):
-        for bus_id in self.buses:
-            self.buses[bus_id][0] = max(0.0, self.buses[bus_id][0] - self.config.time_slot_duration)
-        available_buses = [bid for bid in self.buses if self.buses[bid][0] == 0.0]
-        for i, (bus_id, route) in enumerate(bus_routes.items()):
-            if i >= len(available_buses): break
-            bid = available_buses[i]
-            dis = self.calculate_route_distance(route)
-            self.buses[bid][0] = dis / self.config.bus_speed
-            self.buses[bid][1] = self.config.bus_capacity
+        """Depart at t, then advance every trip by one slot, retaining its bus ID."""
+        advance_fleet(self.buses, bus_routes, self.calculate_route_distance,
+                      self.config.bus_speed, self.config.time_slot_duration)
 
     def step(self, action):
-        """
-        修改后的 Step 函数：不仅计算全局奖励，还计算每辆公交车的奖励，用于 JDRL 算法。
-        """
+        """Advance one complete slot, accounting only for actually served orders."""
+        if len(self.time_slots) >= self.config.time_slots_per_episode:
+            raise ValueError("Episode is complete; reset before another step")
         self.current_p, a_k = action
         a_k = np.clip(a_k, 0, 1)
         a_k = a_k / (np.sum(a_k) + 1e-6)
-
         D_k = self.demand_function(self.current_p)
         S_k = self.supply_function(self.current_p, a_k)
-        O_k = np.minimum(D_k, S_k).astype(int)
+        proposed = np.minimum(D_k, S_k).astype(int)
+        slot = dispatch_and_account(self, proposed)
+        O_k = np.array(slot.served_counts, dtype=int)
+        self.update_bus_state(slot.routes)
 
-        # 情况 1: 无订单
-        if np.sum(O_k) == 0:
-            self.update_bus_state({})
-            next_state = self.get_state()
-            bus_rewards = np.zeros(self.num_buses)
-            return next_state, 0.0, bus_rewards, False, {"revenue": 0.0, "orr": 0.0, "cost": 0.0, "total_distance": 0.0}
-
-        # 情况 2: 有订单
-        orders = []
-        for k in range(self.config.num_destinations):
-            orders.extend([k] * O_k[k])
-
-        bus_routes, bus_orders = self.dispatcher.dispatch(orders, self.buses)
-
-        # --- JDRL 核心：计算每辆车的独立收益 ---
-        cost_total = 0.0
-        bus_rewards = np.zeros(self.num_buses)
-        
-        for bus_id, route in bus_routes.items():
-            carried_orders = bus_orders.get(bus_id, [])
-            revenue_bus = sum([self.current_p[dest_id] for dest_id in carried_orders])
-            
-            dis_i = self.calculate_route_distance(route)
-            cost_bus = self.config.beta_d * dis_i
-            cost_total += cost_bus
-            
-            # 公交车利润 = 收入 - 成本
-            bus_rewards[bus_id] = revenue_bus - cost_bus
-
-        self.update_bus_state(bus_routes)
-
-        revenue = np.sum(self.current_p * O_k)
-        R_t = revenue - cost_total
-        ORR_t = np.sum(O_k) / (np.sum(D_k) + 1e-6)
-        
-        global_reward = R_t + self.config.lambda_or * ORR_t
-
+        # Preserve the existing demand formula/phase; zero-order slots now use it too.
         self.N_p = np.random.poisson(20 + self.config.demand_fluctuation * np.sin(len(self.time_slots) * self.config.demand_frequency), self.config.num_destinations)
         self.time_slots.append(len(self.time_slots) + 1)
+        revenue = np.sum(self.current_p * O_k) - slot.cost
+        orr = np.sum(O_k) / (np.sum(D_k) + 1e-6)
+        reward = revenue + self.config.lambda_or * orr
+        bus_rewards = np.array([slot.bus_profit.get(bid, 0.0) for bid in self.buses])
         done = len(self.time_slots) >= self.config.time_slots_per_episode
-        
-        # 确保 next_state 总是被定义
-        next_state = self.get_state()
-
         info = {
-            "revenue": revenue - cost_total,
-            "orr": ORR_t,
-            "cost": cost_total,
-            "total_distance": cost_total / self.config.beta_d,
-            "orders_accepted": np.sum(O_k)
+            "revenue": revenue,
+            "orr": orr,
+            "cost": slot.cost,
+            "total_distance": slot.distance,
+            "orders_accepted": int(np.sum(O_k)),
+            "orders_proposed": int(np.sum(proposed)),
         }
-        return next_state, global_reward, bus_rewards, done, info
+        return self.get_state(), reward, bus_rewards, done, info
 
 class JDRLNetwork(nn.Module):
     """
@@ -542,6 +508,7 @@ def evaluate_policy(agent, config, episodes=5):
     return summary
 
 def train_jdrl(config, run_name=None):
+    validate_method_selection("jdrl-pomo")
     # 随机种子设置
     np.random.seed(42)
     random.seed(42)

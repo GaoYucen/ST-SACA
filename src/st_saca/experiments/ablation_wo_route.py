@@ -1,3 +1,4 @@
+from st_saca.experiment_guards import config_snapshot, validate_ablation_config
 import torch
 import numpy as np
 from st_saca.agents import st_saca as SACA
@@ -119,12 +120,17 @@ class GreedyDispatcher:
 
         return bus_routes, bus_orders
 
+def _validate_config(config):
+    validate_ablation_config("wo-route", config_snapshot(config), config_snapshot(SACA.Config()))
+
+
 class AblationEnv(SACA.BusBookingEnv):
     """
     继承原始环境，但覆盖初始化方法，
     强制使用 GreedyDispatcher 替代 AttentionDispatcherRouter
     """
     def __init__(self, config):
+        _validate_config(config)
         # 1. 调用父类初始化
         super().__init__(config)
         
@@ -141,6 +147,13 @@ def train_ablation_wo_route():
     config.lambda_or = 0.1
     config.lr = 3e-3  
     run_name = "wo_AttnRoute"
+    _validate_config(config)
+    np.random.seed(42)
+    random.seed(42)
+    torch.manual_seed(42)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(42)
+        torch.cuda.manual_seed_all(42)
     
     # 2. 初始化消融环境
     env = AblationEnv(config)
@@ -245,11 +258,4 @@ def save_log(log, run_name):
     print(f"Log saved to {filename}")
 
 if __name__ == "__main__":
-    np.random.seed(42)
-    random.seed(42)
-    torch.manual_seed(42)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed(42)
-        torch.cuda.manual_seed_all(42)
-    
     train_ablation_wo_route()

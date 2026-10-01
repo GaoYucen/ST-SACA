@@ -1,3 +1,4 @@
+from st_saca.environment_consistency import available_seats, dispatch_and_account, advance_fleet
 import math
 import torch
 import torch.nn as nn
@@ -125,7 +126,7 @@ class BusBookingEnv:
     def supply_function(self, p_k, a_k):
         """供给函数（论文公式4）：S_k^t = N_s * a_k * F_sk，F_sk = (dist_max + dist_min - dist_k)/dist_max * p²"""
         # 计算当前可用座位数N_s（所有公交剩余容量之和）
-        self.N_s = sum([bus[1] for bus in self.buses.values()])
+        self.N_s = available_seats(self.buses)
         if self.N_s == 0:
             return np.zeros_like(p_k)
         
@@ -147,59 +148,33 @@ class BusBookingEnv:
         return R_t + self.config.lambda_or * ORR_t, R_t, ORR_t
 
     def step(self, action):
-        """环境一步交互（对应论文图3流程）
-        action: (P, A) -> P: 价格向量(30,), A: 座位分配向量(30,)（sum(A)=1）
-        """
+        """Advance one complete slot, accounting only for actually served orders."""
+        if len(self.time_slots) >= self.config.time_slots_per_episode:
+            raise ValueError("Episode is complete; reset before another step")
         self.current_p, a_k = action
         a_k = np.clip(a_k, 0, 1)
-        a_k = a_k / (np.sum(a_k) + 1e-6)  # 确保sum(A)=1
-
-        # 1. 计算需求D、供给S、已派单订单O（论文公式3-5）
+        a_k = a_k / (np.sum(a_k) + 1e-6)
         D_k = self.demand_function(self.current_p)
         S_k = self.supply_function(self.current_p, a_k)
-        O_k = np.minimum(D_k, S_k).astype(int)  # 整数订单数
+        proposed = np.minimum(D_k, S_k).astype(int)
+        slot = dispatch_and_account(self, proposed)
+        O_k = np.array(slot.served_counts, dtype=int)
+        self.update_bus_state(slot.routes)
 
-        # 2. 若无可派单订单，直接更新状态
-        if np.sum(O_k) == 0:
-            self.update_bus_state({})  # 无公交出发
-            next_state = self.get_state()
-            return next_state, 0.0, False, {"revenue": 0.0, "orr": 0.0, "cost": 0.0, "total_distance": 0.0}
-
-        # 3. 生成订单-目的地映射（O_k个订单对应第k个目的地）
-        orders = []
-        for k in range(self.config.num_destinations):
-            orders.extend([k] * O_k[k])
-
-        # 4. 调用注意力模块进行派单与路径规划
-        bus_routes, bus_orders = self.dispatcher.dispatch(orders, self.buses)
-
-        # 5. 计算总成本（论文公式4：cost_i = β_d * dis_i）
-        cost_total = 0.0
-        for route in bus_routes.values():
-            dis_i = self.calculate_route_distance(route)
-            cost_total += self.config.beta_d * dis_i
-
-        # 6. 更新公交状态（剩余返回时间、容量）
-        self.update_bus_state(bus_routes)
-
-        # 7. 生成下一时间步的潜在需求（模拟需求波动）
+        # Preserve the existing demand formula/phase; zero-order slots now use it too.
         self.N_p = np.random.poisson(self.config.demand_amplitude + self.config.demand_fluctuation * np.sin(len(self.time_slots) * self.config.demand_frequency), self.config.num_destinations)
         self.time_slots.append(len(self.time_slots) + 1)
-
-        # 8. 计算奖励与终止状态
-        reward, revenue, orr = self.calculate_reward(O_k, D_k, cost_total)
-        next_state = self.get_state()
+        reward, revenue, orr = self.calculate_reward(O_k, D_k, slot.cost)
         done = len(self.time_slots) >= self.config.time_slots_per_episode
-
-        # 记录信息
         info = {
             "revenue": revenue,
             "orr": orr,
-            "cost": cost_total,
-            "total_distance": cost_total / self.config.beta_d,
-            "orders_accepted": np.sum(O_k)
+            "cost": slot.cost,
+            "total_distance": slot.distance,
+            "orders_accepted": int(np.sum(O_k)),
+            "orders_proposed": int(np.sum(proposed)),
         }
-        return next_state, reward, done, info
+        return self.get_state(), reward, done, info
 
     def calculate_route_distance(self, route):
         """
@@ -242,24 +217,10 @@ class BusBookingEnv:
         return np.sum(distances)
 
     def update_bus_state(self, bus_routes):
-        """更新公交剩余返回时间（基于路径长度与速度）"""
-        # 首先减少所有公交的剩余返回时间（当前时间步已过去）
-        for bus_id in self.buses:
-            self.buses[bus_id][0] = max(0.0, self.buses[bus_id][0] - self.config.time_slot_duration)
+        """Depart at t, then advance every trip by one slot, retaining its bus ID."""
+        advance_fleet(self.buses, bus_routes, self.calculate_route_distance,
+                      self.config.bus_speed, self.config.time_slot_duration)
 
-        # 为新出发的公交分配容量并计算返回时间
-        available_buses = [bid for bid in self.buses if self.buses[bid][0] == 0.0]  # 已返回的公交
-        for i, (bus_id, route) in enumerate(bus_routes.items()):
-            if i >= len(available_buses):
-                break  # 无可用公交，停止分配
-            bid = available_buses[i]
-            # 计算路径耗时（小时）= 距离 / 速度
-            dis = self.calculate_route_distance(route)
-            time_needed = dis / self.config.bus_speed
-            self.buses[bid][0] = time_needed  # 更新剩余返回时间
-            self.buses[bid][1] = self.config.bus_capacity  # 重置容量（假设公交返回后可复用）
-
-    
 class Actor(nn.Module):
     """策略网络：输入状态→输出价格P与座位分配A（连续动作）"""
     def __init__(self, config, state_dim, action_dim):
