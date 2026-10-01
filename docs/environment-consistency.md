@@ -42,6 +42,14 @@ rewritten. Their configurations must match the full control except for the
 declared intervention; wo-ORR specifically requires lambda_or=0. This check
 does not certify the scientific validity of the model or ablation implementation.
 The actual wo-ORR defaults also lack the full control's num_buses field.
+Even a caller-supplied aligned wo-ORR configuration remains blocked: that
+ablation owns a separate legacy environment not covered by these four repairs.
+It requires reviewed integration before enabling.
+
+The current entrypoint wrappers compare against a fresh full-model default
+Config. They are intentionally not a general paired non-default protocol
+validator: alternate matched episode/demand/seed settings require an explicit
+reviewed reference contract rather than silently bypassing the default guard.
 
 No checkpoint is generated or substituted, no objective is replaced, and no
 manuscript source is changed. Normal legacy module imports still require their
@@ -65,6 +73,11 @@ These tests establish control-flow/accounting invariants. They are not a full
 NumPy/PyTorch integration test, numerical policy evaluation, training smoke
 test, timing benchmark, or validation of paper results. Actual model-dependent
 integration remains blocked by missing/invalid scientific asset bindings.
+
+The existing experiments/speed.py end-to-end benchmark repeatedly calls step
+without episode resets (30 warmup plus 200 measured calls). It is not compatible
+with the explicit terminal boundary and remains unsupported until its reset/
+episode measurement protocol is reviewed. No timing claim is made by this PR.
 
 Configuration tests check preserved bad defaults fail, matching controls pass,
 both baseline blockers aggregate before a partial all-method suite, and guard

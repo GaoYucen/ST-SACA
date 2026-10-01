@@ -1,4 +1,5 @@
-from st_saca.experiment_guards import config_snapshot, validate_ablation_config
+from st_saca.experiment_guards import (config_snapshot, validate_ablation_config,
+                                      block_legacy_wo_orr_environment)
 import math
 import torch
 import torch.nn as nn
@@ -70,6 +71,7 @@ class Config:
 def _validate_config(config):
     from st_saca.agents.st_saca import Config as FullConfig
     validate_ablation_config("wo-orr", config_snapshot(config), config_snapshot(FullConfig()))
+    block_legacy_wo_orr_environment()
 
 
 class BusBookingEnv:

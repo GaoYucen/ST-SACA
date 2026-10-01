@@ -254,6 +254,20 @@ class EnvironmentChecks:
     def test_mismatched_bus_ids_are_rejected(self):
         self.assert_bad_dispatch({0: [0]}, {})
 
+    def test_valid_destination_is_safe_for_coordinate_indexing(self):
+        coordinates = [3.0, 4.0]
+        self.env.calculate_route_distance = lambda route: sum(coordinates[k] for k in route)
+        self.assertEqual(self.step()[3]["total_distance"], 3.0)
+
+    def test_float_destination_is_rejected(self):
+        self.assert_bad_dispatch({0: [0.0]}, {0: [0.0]})
+
+    def test_bool_destination_is_rejected(self):
+        self.assert_bad_dispatch({0: [False]}, {0: [False]})
+
+    def test_bool_bus_id_is_rejected(self):
+        self.assert_bad_dispatch({False: [0]}, {False: [0]})
+
     def test_reset_respects_configured_fleet_size(self):
         self.env.config.num_buses = 3
         self.env.reset()
@@ -275,6 +289,27 @@ class TestFleetAtomicity(unittest.TestCase):
         with self.assertRaises(ValueError):
             advance_fleet(fleet, {0: [0], 1: [1]}, lambda _: 3.0, 1.0, 1.0)
         self.assertEqual(fleet, before)
+
+    def test_overflowed_travel_time_cannot_mutate_fleet(self):
+        fleet = {0: [0.0, 10]}
+        before = copy.deepcopy(fleet)
+        with self.assertRaisesRegex(ValueError, "Travel time must be finite"):
+            advance_fleet(fleet, {0: [0]}, lambda _: 1e308, 1e-308, 1.0)
+        self.assertEqual(fleet, before)
+
+    def test_float_bus_id_is_rejected(self):
+        with self.assertRaises(ValueError):
+            available_seats({0.0: [0.0, 10]})
+
+    def test_one_shot_fractional_count_iterators_are_rejected(self):
+        env = SimpleNamespace(
+            config=SimpleNamespace(num_destinations=2, beta_d=0.1),
+            buses={0: [0.0, 10]}, dispatcher=FixedDispatcher(),
+            current_p=Vector([0.5, 0.5]), calculate_route_distance=lambda _: 3.0)
+        for counts in ([1.9, 0], [-0.2, 0]):
+            with self.subTest(counts=counts), self.assertRaises(ValueError):
+                dispatch_and_account(env, iter(counts))
+        self.assertEqual(env.dispatcher.calls, [])
 
     def test_negative_timer_is_rejected(self):
         with self.assertRaises(ValueError):

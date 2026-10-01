@@ -7,7 +7,7 @@ import unittest
 
 from st_saca.experiment_guards import (
     ExperimentConfigurationError, config_snapshot,
-    validate_ablation_config, validate_method_selection,
+    validate_ablation_config, validate_method_selection, block_legacy_wo_orr_environment,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -121,6 +121,24 @@ class TestConfigurationGuards(unittest.TestCase):
         self.assertIn("lr:", str(ctx.exception))
         self.assertIn("num_buses: missing", str(ctx.exception))
 
+    def test_production_wo_orr_wrapper_blocks_even_aligned_config(self):
+        path = "src/st_saca/experiments/ablation_wo_orr.py"
+        node = copy.deepcopy(function(path, "_validate_config"))
+        # Replace only the heavyweight reference import with a plain Config fixture.
+        node.body = [statement for statement in node.body
+                     if not isinstance(statement, ast.ImportFrom)]
+        reference = actual_config("src/st_saca/agents/st_saca.py")
+        actual = copy.deepcopy(reference)
+        actual.lambda_or = 0.0
+        namespace = dict(
+            FullConfig=lambda: copy.deepcopy(reference),
+            config_snapshot=config_snapshot, validate_ablation_config=validate_ablation_config,
+            block_legacy_wo_orr_environment=block_legacy_wo_orr_environment)
+        exec(compile(ast.Module(body=[node], type_ignores=[]), path, "exec"), namespace)
+        with self.assertRaises(ExperimentConfigurationError) as ctx:
+            namespace["_validate_config"](actual)
+        self.assertEqual(ctx.exception.code, "unrepaired-ablation-environment")
+
     def test_actual_wo_route_configuration_fails_before_seed_or_environment(self):
         path = "src/st_saca/experiments/ablation_wo_route.py"
         node = copy.deepcopy(function(path, "train_ablation_wo_route"))
@@ -154,7 +172,17 @@ class TestGuardPlacement(unittest.TestCase):
         ]
         for path, name, owner in targets:
             with self.subTest(path=path, function=name, owner=owner):
-                self.assertEqual(first_call(function(path, name, owner)), "validate_method_selection")
+                node = function(path, name, owner)
+                self.assertEqual(first_call(node), "validate_method_selection")
+                call = next(statement.value for statement in node.body
+                            if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call))
+                if "grc_elg.py" in path:
+                    self.assertEqual(ast.literal_eval(call.args[0]), "grc-elg")
+                elif "jdrl_pomo.py" in path:
+                    self.assertEqual(ast.literal_eval(call.args[0]), "jdrl-pomo")
+                else:
+                    self.assertIsInstance(call.args[0], ast.Name)
+                    self.assertEqual(call.args[0].id, "method")
 
     def test_ablation_guards_are_before_environment_or_seed(self):
         for path, name, owner in [
@@ -164,6 +192,28 @@ class TestGuardPlacement(unittest.TestCase):
         ]:
             with self.subTest(path=path, function=name):
                 self.assertEqual(first_call(function(path, name, owner)), "_validate_config")
+
+    def test_actual_ablation_wrappers_bind_variant_and_full_reference(self):
+        for filename, variant, reference_name in (
+            ("ablation_wo_route.py", "wo-route", "SACA.Config"),
+            ("ablation_wo_orr.py", "wo-orr", "FullConfig"),
+        ):
+            path = "src/st_saca/experiments/" + filename
+            node = function(path, "_validate_config")
+            call = next(statement.value for statement in node.body
+                        if isinstance(statement, ast.Expr) and isinstance(statement.value, ast.Call)
+                        and isinstance(statement.value.func, ast.Name)
+                        and statement.value.func.id == "validate_ablation_config")
+            self.assertEqual(ast.literal_eval(call.args[0]), variant)
+            self.assertEqual(call.args[1].func.id, "config_snapshot")
+            self.assertEqual(call.args[1].args[0].id, "config")
+            self.assertEqual(call.args[2].func.id, "config_snapshot")
+            reference = call.args[2].args[0].func
+            if reference_name == "SACA.Config":
+                self.assertIsInstance(reference, ast.Attribute)
+                self.assertEqual((reference.value.id, reference.attr), ("SACA", "Config"))
+            else:
+                self.assertEqual(reference.id, "FullConfig")
 
     def test_guard_module_imports_only_standard_library(self):
         tree = source_tree("src/st_saca/experiment_guards.py")

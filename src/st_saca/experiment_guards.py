@@ -112,3 +112,13 @@ def validate_method_selection(method):
               if name in _BASELINE_BLOCKERS]
     if issues:
         raise ExperimentConfigurationError("unverified-baseline", issues)
+
+
+def block_legacy_wo_orr_environment():
+    """Configuration parity cannot certify the separate, unrepaired environment."""
+    raise ExperimentConfigurationError(
+        "unrepaired-ablation-environment",
+        ["wo-orr still owns a legacy environment without the shared fleet/service "
+         "repairs. Review and integrate that environment before enabling this "
+         "ablation; matching scalar settings alone is insufficient."]
+    )

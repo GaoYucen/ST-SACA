@@ -8,6 +8,7 @@ original method modules and are deliberately not changed here.
 from collections import Counter
 from dataclasses import dataclass
 import math
+from numbers import Integral
 
 
 @dataclass
@@ -23,6 +24,8 @@ class DispatchAccounting:
 def _fleet_snapshot(buses):
     snapshot = {}
     for bus_id, state in buses.items():
+        if isinstance(bus_id, bool) or not isinstance(bus_id, Integral):
+            raise ValueError("Bus IDs must be integers, not bool/float aliases")
         remaining, capacity = float(state[0]), int(state[1])
         if not math.isfinite(remaining) or remaining < 0:
             raise ValueError("Bus remaining time must be finite and nonnegative")
@@ -40,10 +43,11 @@ def available_seats(buses):
 
 def dispatch_and_account(env, proposed_counts):
     """Count only valid, actually assigned passengers; never mutate the fleet."""
-    proposed = [int(value) for value in proposed_counts]
+    raw_counts = list(proposed_counts)
+    proposed = [int(value) for value in raw_counts]
     if (len(proposed) != env.config.num_destinations
             or any(count < 0 or count != value
-                   for count, value in zip(proposed, proposed_counts))):
+                   for count, value in zip(proposed, raw_counts))):
         raise ValueError("Proposed orders must be nonnegative per-station integers")
     fleet = _fleet_snapshot(env.buses)
     orders = [station for station, count in enumerate(proposed)
@@ -56,16 +60,19 @@ def dispatch_and_account(env, proposed_counts):
     bus_profit = {}
     safe_routes, safe_assignments = {}, {}
     for bus_id, route in routes.items():
-        if bus_id not in env.buses or env.buses[bus_id][0] != 0.0:
+        if (isinstance(bus_id, bool) or not isinstance(bus_id, Integral)
+                or bus_id not in env.buses or env.buses[bus_id][0] != 0.0):
             raise ValueError("A route can only be assigned to a start-of-slot idle bus")
         passengers = list(assignments[bus_id])
         route = list(route)
         if not passengers or len(passengers) > env.buses[bus_id][1]:
             raise ValueError("A dispatched bus must carry one to capacity passengers")
         for destination in route + passengers:
-            station = int(destination)
-            if station != destination or not 0 <= station < len(served):
-                raise ValueError("Dispatch contains an invalid destination")
+            if (isinstance(destination, bool) or not isinstance(destination, Integral)
+                    or not 0 <= destination < len(served)):
+                raise ValueError("Dispatch destinations must be valid integer station IDs")
+        route = [int(destination) for destination in route]
+        passengers = [int(destination) for destination in passengers]
         if not set(passengers).issubset(set(route)):
             raise ValueError("Every served passenger destination must appear in its route")
         for station, count in Counter(passengers).items():
@@ -95,11 +102,15 @@ def advance_fleet(buses, bus_routes, route_distance, speed, slot_duration):
     if not math.isfinite(slot_duration) or slot_duration <= 0:
         raise ValueError("Slot duration must be finite and positive")
     for bus_id, route in bus_routes.items():
-        if bus_id not in snapshot or snapshot[bus_id][0] != 0.0:
+        if (isinstance(bus_id, bool) or not isinstance(bus_id, Integral)
+                or bus_id not in snapshot or snapshot[bus_id][0] != 0.0):
             raise ValueError("Only a start-of-slot idle bus may receive a new route")
         distance = float(route_distance(route))
         if not math.isfinite(distance) or distance < 0:
             raise ValueError("Route distance must be finite and nonnegative")
-        snapshot[bus_id][0] = distance / speed
+        travel_time = distance / speed
+        if not math.isfinite(travel_time):
+            raise ValueError("Travel time must be finite")
+        snapshot[bus_id][0] = travel_time
     for bus_id, (remaining, capacity) in snapshot.items():
         buses[bus_id] = [max(0.0, remaining - slot_duration), capacity]
