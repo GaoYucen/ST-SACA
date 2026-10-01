@@ -1,3 +1,4 @@
+from st_saca.experiment_guards import config_snapshot, validate_ablation_config
 import math
 import torch
 import torch.nn as nn
@@ -66,8 +67,14 @@ class Config:
         self.conv_std_ratio = 0.05       # 最近窗口标准差占比阈值（5%）
         self.eval_interval = 10          # 可选：评估打印间隔
 
+def _validate_config(config):
+    from st_saca.agents.st_saca import Config as FullConfig
+    validate_ablation_config("wo-orr", config_snapshot(config), config_snapshot(FullConfig()))
+
+
 class BusBookingEnv:
     def __init__(self, config):
+        _validate_config(config)
         self.config = config
         self.init_destinations()  # 初始化目的地
         # 关键修复：仅创建一次注意力模块，并移至 MPS
@@ -819,6 +826,7 @@ def evaluate_policy(agent, config, episodes=5):
     return summary
 
 def train_saca(config, run_name=None):
+    _validate_config(config)
     # 修复：补充 MPS 兼容的随机种子
     np.random.seed(42)    # numpy 随机种子
     random.seed(42)       # Python 随机种子（经验回放采样用）

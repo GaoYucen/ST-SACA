@@ -1,3 +1,5 @@
+from st_saca.experiment_guards import validate_method_selection
+from st_saca.environment_consistency import available_seats, dispatch_and_account, advance_fleet
 import math
 import torch
 import torch.nn as nn
@@ -29,6 +31,7 @@ class Config:
         # 业务场景参数
         self.departure_station = np.array([104.06, 30.67])  # 成都火车东站经纬度
         self.num_destinations = 30
+        self.num_buses = 10
         self.bus_capacity = 30
         self.bus_speed = 30
         self.beta_d = 0.15
@@ -139,6 +142,7 @@ class ELG_TSP_Solver(nn.Module):
     Ensemble Solver for TSP Component.
     """
     def __init__(self, config):
+        validate_method_selection("grc-elg")
         super(ELG_TSP_Solver, self).__init__()
         self.config = config
         embed_dim = 128
@@ -268,6 +272,7 @@ class ELGDispatcherRouter(nn.Module):
 
 class BusBookingEnv:
     def __init__(self, config):
+        validate_method_selection("grc-elg")
         self.config = config
         self.init_destinations()
         # 使用 ELG 调度器
@@ -300,7 +305,7 @@ class BusBookingEnv:
     def reset(self):
         self.time_slots = []
         self.current_p = np.zeros(self.config.num_destinations)
-        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(10)}
+        self.buses = {i: [0.0, self.config.bus_capacity] for i in range(self.config.num_buses)}
         self.N_p = np.random.poisson(20, self.config.num_destinations)
         return self.get_state()
 
@@ -316,7 +321,7 @@ class BusBookingEnv:
         return self.N_p * F_pk
 
     def supply_function(self, p_k, a_k):
-        self.N_s = sum([bus[1] for bus in self.buses.values()])
+        self.N_s = available_seats(self.buses)
         if self.N_s == 0:
             return np.zeros_like(p_k)
         multiplier = (self.dist_max + self.dist_min - self.dist_k) / self.dist_max
@@ -332,47 +337,33 @@ class BusBookingEnv:
         return R_t + self.config.lambda_or * ORR_t, R_t, ORR_t
 
     def step(self, action):
+        """Advance one complete slot, accounting only for actually served orders."""
+        if len(self.time_slots) >= self.config.time_slots_per_episode:
+            raise ValueError("Episode is complete; reset before another step")
         self.current_p, a_k = action
         a_k = np.clip(a_k, 0, 1)
         a_k = a_k / (np.sum(a_k) + 1e-6)
-
         D_k = self.demand_function(self.current_p)
         S_k = self.supply_function(self.current_p, a_k)
-        O_k = np.minimum(D_k, S_k).astype(int)
+        proposed = np.minimum(D_k, S_k).astype(int)
+        slot = dispatch_and_account(self, proposed)
+        O_k = np.array(slot.served_counts, dtype=int)
+        self.update_bus_state(slot.routes)
 
-        if np.sum(O_k) == 0:
-            self.update_bus_state({})
-            next_state = self.get_state()
-            return next_state, 0.0, False, {"revenue": 0.0, "orr": 0.0, "cost": 0.0, "total_distance": 0.0}
-
-        orders = []
-        for k in range(self.config.num_destinations):
-            orders.extend([k] * O_k[k])
-
-        # 使用 ELG Dispatcher
-        bus_routes, bus_orders = self.dispatcher.dispatch(orders, self.buses)
-
-        cost_total = 0.0
-        for route in bus_routes.values():
-            dis_i = self.calculate_route_distance(route)
-            cost_total += self.config.beta_d * dis_i
-
-        self.update_bus_state(bus_routes)
+        # Preserve the existing demand formula/phase; zero-order slots now use it too.
         self.N_p = np.random.poisson(20 + self.config.demand_fluctuation * np.sin(len(self.time_slots) * self.config.demand_frequency), self.config.num_destinations)
         self.time_slots.append(len(self.time_slots) + 1)
-
-        reward, revenue, orr = self.calculate_reward(O_k, D_k, cost_total)
-        next_state = self.get_state()
+        reward, revenue, orr = self.calculate_reward(O_k, D_k, slot.cost)
         done = len(self.time_slots) >= self.config.time_slots_per_episode
-
         info = {
             "revenue": revenue,
             "orr": orr,
-            "cost": cost_total,
-            "total_distance": cost_total / self.config.beta_d,
-            "orders_accepted": np.sum(O_k)
+            "cost": slot.cost,
+            "total_distance": slot.distance,
+            "orders_accepted": int(np.sum(O_k)),
+            "orders_proposed": int(np.sum(proposed)),
         }
-        return next_state, reward, done, info
+        return self.get_state(), reward, done, info
 
     def calculate_route_distance(self, route):
         if len(route) == 0: return 0.0
@@ -392,16 +383,9 @@ class BusBookingEnv:
         return np.sum(R * c)
 
     def update_bus_state(self, bus_routes):
-        for bus_id in self.buses:
-            self.buses[bus_id][0] = max(0.0, self.buses[bus_id][0] - self.config.time_slot_duration)
-        available_buses = [bid for bid in self.buses if self.buses[bid][0] == 0.0]
-        for i, (bus_id, route) in enumerate(bus_routes.items()):
-            if i >= len(available_buses): break
-            bid = available_buses[i]
-            dis = self.calculate_route_distance(route)
-            time_needed = dis / self.config.bus_speed
-            self.buses[bid][0] = time_needed
-            self.buses[bid][1] = self.config.bus_capacity
+        """Depart at t, then advance every trip by one slot, retaining its bus ID."""
+        advance_fleet(self.buses, bus_routes, self.calculate_route_distance,
+                      self.config.bus_speed, self.config.time_slot_duration)
 
 # ------------------------------------------------------------------------
 # 4. GRC 核心模块 (模型与 Agent)
@@ -789,6 +773,7 @@ def evaluate_policy(agent, config, episodes=5):
     return summary
 
 def train_grc_elg(config, run_name="GRC_ELG"):
+    validate_method_selection("grc-elg")
     np.random.seed(42)
     random.seed(42)
     torch.manual_seed(42)
