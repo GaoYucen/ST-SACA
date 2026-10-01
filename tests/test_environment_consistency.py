@@ -268,6 +268,11 @@ class EnvironmentChecks:
     def test_bool_bus_id_is_rejected(self):
         self.assert_bad_dispatch({False: [0]}, {False: [0]})
 
+    def test_assignment_bus_alias_cannot_hide_behind_valid_route_key(self):
+        for alias in (False, 0.0):
+            with self.subTest(alias=alias):
+                self.assert_bad_dispatch({0: [0]}, {alias: [0]})
+
     def test_reset_respects_configured_fleet_size(self):
         self.env.config.num_buses = 3
         self.env.reset()

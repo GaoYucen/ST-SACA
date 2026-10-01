@@ -53,6 +53,10 @@ def dispatch_and_account(env, proposed_counts):
     orders = [station for station, count in enumerate(proposed)
               for _ in range(count)]
     routes, assignments = env.dispatcher.dispatch(orders, fleet) if orders else ({}, {})
+    for mapping in (routes, assignments):
+        if any(isinstance(bus_id, bool) or not isinstance(bus_id, Integral)
+               for bus_id in mapping):
+            raise ValueError("Dispatch bus IDs must be integers, not bool/float aliases")
     if set(routes) != set(assignments):
         raise ValueError("Dispatch route and passenger bus IDs must agree")
     served = [0] * env.config.num_destinations
