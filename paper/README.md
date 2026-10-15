@@ -6,7 +6,7 @@
 
 ## 编译
 
-安装 TeX Live（包括 IEEEtran、latex-extra、science、推荐字体及 latexmk）。
+安装 TeX Live（包括 IEEEtran、latex-extra、science、publishers、推荐字体及 latexmk）。
 
 ```bash
 cd paper
