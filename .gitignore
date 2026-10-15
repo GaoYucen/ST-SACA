@@ -32,3 +32,8 @@ checkpoints/
 !data/
 !data/stations/
 !data/stations/*.txt
+
+# Curated manuscript input assets (generated PDFs remain ignored)
+!paper/fig/**/*.pdf
+!paper/fig/**/*.png
+!paper/letters/difference/fig/**/*.pdf

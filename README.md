@@ -151,3 +151,7 @@ Average inference time per time slot:
 ## License
 
 No license file is currently declared for this repository. Please add a license before public redistribution or reuse.
+
+## Manuscript collaboration
+
+Editable manuscript sources are in [paper/](paper/README.md). Student changes must follow the [PR review workflow](CONTRIBUTING.md) and receive approval from @GaoYucen.

@@ -1,0 +1,83 @@
+% \documentclass[letterpaper, 10pt]{article}
+\documentclass[11pt, a4paper]{article}
+% \documentclass{letter}
+% \documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{comment}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{framed}
+% \usepackage[linewidth=1pt]{mdframed}
+\usepackage[top=35mm,headsep=15mm]{geometry}
+\usepackage{ragged2e}
+\justifying\let\raggedright\justifying
+\usepackage{fancybox}
+% \setlength{\parskip}{1mm}
+% \setlength{\spaceskip}{\fontdimen2\font}
+
+% \newdefinition{definition}{Definition}
+% \newproof{proof}{Proof}
+
+% \title{Difference Letter}
+
+\pagestyle{empty}
+
+
+\begin{document}
+\centering
+{\Large \textbf{Cover Letter}}
+
+\raggedright
+% \large
+% \normalsize
+
+% \vspace{5mm}
+
+\noindent Dear Editor/Reviewer,  
+% \vspace{1mm}
+% \;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\;\textcolor{red}{5 July 2023}{} 
+%\\
+
+We are pleased to submit the manuscript entitled, ``A Spatio-Temporal Adaptive Framework for Dispatching, Routing, and Pricing of Bus-Booking'', written by Yucen Gao, Pengfei Du, Xiaofeng Gao, Bin Wang and Xiaochun Yang, for consideration by your esteemed journal \emph{IEEE Transactions on Knowledge and Data Engineering (TKDE)}. We believe this work is well-suited for the scope of TKDE because it studies data-driven knowledge discovery and decision optimization for Intelligent Transportation Systems (ITS), with particular emphasis on spatio-temporal data modeling, robust learning under non-stationary demand, and joint optimization over real-world trajectory and order data.
+
+Specifically, we propose ST-SACA, a novel end-to-end adaptive framework designed to solve the Joint Dispatching, Routing, and Pricing (JDRP) problem for bus-booking platforms. Unlike traditional methods that rely on stationary assumptions or treat operational decisions separately, ST-SACA learns robust policies from stochastic and dynamically changing demand environments. By incorporating a Spatio-Temporal Adaptive Actor, our model explicitly integrates geographical topology with demand dynamics through self-attention, enabling data-driven decision intelligence for coupled pricing, dispatching, and routing. Extensive experiments on real-world datasets demonstrate that ST-SACA significantly outperforms state-of-the-art baselines in terms of long-term profit and service reliability.
+
+A preliminary version of this paper was presented at DASFAA 2023. This journal submission represents significant extensions: (1) Problem Reformulation: a generalized formulation distinguishing between Stationary and Robust JDRP to model stochastic uncertainty. (2) Spatio-Temporal Modeling Innovation: a redesigned architecture featuring the Spatio-Temporal Adaptive Actor to capture complex topological dependencies and temporal demand dynamics. (3) Theoretical Depth: new rigorous analyses regarding computational complexity, convergence properties, and robustness guarantees. (4) Extensive Evaluation: comprehensive new experiments evaluating the performance against state-of-the-art baselines under non-stationary scenarios. The specific differences between conference and journal versions will be emphasized clearly in the ``Difference Letter'' later.
+
+% 本次期刊提交与会议版本之间存在显著差异，包括差异现有框架的不公平性、一些具体数据和示例、SACA的现实场景举例、JDRP问题的说明、目的站的数量选择以及$\lambda$对\textit{Rev}和\textit{ORR}的影响。
+
+
+
+Correspondence should be addressed to the corresponding author, Prof. Xiaofeng Gao, at the following address, phone, and email address:
+\vspace{2mm}
+
+\doublebox{\parbox{130mm}{
+\textbf{Xiaofeng Gao}, \vspace{0.5mm}\\ 
+Telecom Building 3-407, Shanghai Jiao Tong University\\
+800 Dongchuan Road, Minhang District, Shanghai, China, 200240\\ 
+Phone:+86-21-3420-7407, \\
+Email: gao-xf@cs.sjtu.edu.cn
+}}
+\vspace{2mm}
+
+We appreciate your time and effort in reviewing this manuscript and look forward to receiving any helpful comments! Please feel free to contact us for any further information.
+
+\noindent --------------
+
+\noindent Sincerely yours,
+
+\noindent Professor Xiaofeng Gao, PH.D.,
+
+\noindent School of Computer Science
+
+\noindent Shanghai Jiao Tong University, China
+\end{document}

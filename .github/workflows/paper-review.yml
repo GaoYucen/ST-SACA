@@ -1,0 +1,36 @@
+name: Paper review
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  paper-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends latexmk texlive-latex-extra texlive-science texlive-fonts-recommended
+      - name: Compile manuscript and letters
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd paper && latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build ST-SACA.tex)
+          (cd paper/letters/cover && latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build main.tex)
+          (cd paper/letters/difference && latexmk -pdf -interaction=nonstopmode -halt-on-error -outdir=build difference_letter.tex)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: paper-review-pdfs
+          path: |
+            paper/build/*.pdf
+            paper/letters/cover/build/*.pdf
+            paper/letters/difference/build/*.pdf
+          if-no-files-found: error
+          retention-days: 30

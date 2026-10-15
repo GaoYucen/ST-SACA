@@ -1,0 +1,187 @@
+{
+  "date": "2026-10-15",
+  "source_folder": "SACA_TMC_TKDE",
+  "note": "Import-time hashes only; later edits are reviewed through Git. Historical claims are not newly validated.",
+  "files": [
+    {
+      "source": "Cover letter/main.tex",
+      "destination": "letters/cover/main.tex",
+      "sha256": "5850def1e4dcaf921db423f32c6708cc46b6aaed9b656ceecc8f8fc04bb0e6df"
+    },
+    {
+      "source": "Difference Letter/difference_letter.tex",
+      "destination": "letters/difference/difference_letter.tex",
+      "sha256": "cf947c28eef6aaea64e9533390bde4aa38d6a97fbde952c61a84fe8c09be3ee1"
+    },
+    {
+      "source": "Difference Letter/fig/Framework-journal.pdf",
+      "destination": "letters/difference/fig/Framework-journal.pdf",
+      "sha256": "ddb803539422df11ee88f83c16dc74cd49e083fda8c1c33ceff8b3bbabe8ab3f"
+    },
+    {
+      "source": "Difference Letter/fig/case_study_pricing_demand.pdf",
+      "destination": "letters/difference/fig/case_study_pricing_demand.pdf",
+      "sha256": "937c5762a0bfac45269f07e811e43bf19b5b2b9458cf9a6a47a561fd01c14802"
+    },
+    {
+      "source": "Difference Letter/fig/case_study_pricing_grc_elg.pdf",
+      "destination": "letters/difference/fig/case_study_pricing_grc_elg.pdf",
+      "sha256": "da886e59ddd1b38c752cfdcc7c0b5ba0205a30506696b88fb5d1eb8f74045b0f"
+    },
+    {
+      "source": "Difference Letter/fig/case_study_pricing_jdrl_pomo.pdf",
+      "destination": "letters/difference/fig/case_study_pricing_jdrl_pomo.pdf",
+      "sha256": "30a7e000f1d147ff257201c180f794c1a27b4aaf6529d82668fdaf0053fecbbc"
+    },
+    {
+      "source": "Difference Letter/fig/case_study_pricing_saca.pdf",
+      "destination": "letters/difference/fig/case_study_pricing_saca.pdf",
+      "sha256": "b3d075cb07dfe93595b0b996d679db517ee822feecf47d30318b730c35872d5d"
+    },
+    {
+      "source": "Difference Letter/fig/case_study_pricing_st_saca.pdf",
+      "destination": "letters/difference/fig/case_study_pricing_st_saca.pdf",
+      "sha256": "ea9ef99986885123ce326f3e7825908bd42f56304c95133627701fdb81edd505"
+    },
+    {
+      "source": "Difference Letter/fig/comparison_cost.pdf",
+      "destination": "letters/difference/fig/comparison_cost.pdf",
+      "sha256": "a29b351ff7bacf001815b9ce7639e4d9f801850ed049b41af3beb1f57529f07a"
+    },
+    {
+      "source": "Difference Letter/fig/comparison_orr.pdf",
+      "destination": "letters/difference/fig/comparison_orr.pdf",
+      "sha256": "e3c83249da43c569f7afa8c3d6dcadef262c63128ed7130b45ac576fc92d21d6"
+    },
+    {
+      "source": "Difference Letter/fig/comparison_revenue.pdf",
+      "destination": "letters/difference/fig/comparison_revenue.pdf",
+      "sha256": "3947d52cac1b5d50e661b64614c1e3975823b7bff3142b9146d621831b30ff5f"
+    },
+    {
+      "source": "Difference Letter/fig/comparison_total_reward.pdf",
+      "destination": "letters/difference/fig/comparison_total_reward.pdf",
+      "sha256": "5f2332f434e618265d81d127f617a748a09d6fc7d3161891404d97fbd258c3cc"
+    },
+    {
+      "source": "Difference Letter/fig/parameter_sensitivity_orr.pdf",
+      "destination": "letters/difference/fig/parameter_sensitivity_orr.pdf",
+      "sha256": "08ab2202bcb09fb1125a7164a788d503eef24d68e81b2c1f4d6e4e5a3518d0b0"
+    },
+    {
+      "source": "Difference Letter/fig/toyexample.pdf",
+      "destination": "letters/difference/fig/toyexample.pdf",
+      "sha256": "7590c3a88aa860649d402aec30b05c50480f6eae626882cc9895f3b0f8aff947"
+    },
+    {
+      "source": "Difference Letter/ref.bib",
+      "destination": "letters/difference/ref.bib",
+      "sha256": "c32ba536c63adc8ac713610563660cca7eb9672f354a18716a440b8f106f54e4"
+    },
+    {
+      "source": "ST-SACA.tex",
+      "destination": "ST-SACA.tex",
+      "sha256": "e35acbb147f5d0dd455aa98d5fcf53e90f5ef5c0e87c641762aba58a94a5d2ab"
+    },
+    {
+      "source": "fig/Framework-journal.pdf",
+      "destination": "fig/Framework-journal.pdf",
+      "sha256": "ddb803539422df11ee88f83c16dc74cd49e083fda8c1c33ceff8b3bbabe8ab3f"
+    },
+    {
+      "source": "fig/Overview.pdf",
+      "destination": "fig/Overview.pdf",
+      "sha256": "052d71d9536f1407fd00d9029eedfe5ea23dd7c1ed5994dcc92e441397575240"
+    },
+    {
+      "source": "fig/case_study_pricing_demand.pdf",
+      "destination": "fig/case_study_pricing_demand.pdf",
+      "sha256": "937c5762a0bfac45269f07e811e43bf19b5b2b9458cf9a6a47a561fd01c14802"
+    },
+    {
+      "source": "fig/case_study_pricing_grc_elg.pdf",
+      "destination": "fig/case_study_pricing_grc_elg.pdf",
+      "sha256": "da886e59ddd1b38c752cfdcc7c0b5ba0205a30506696b88fb5d1eb8f74045b0f"
+    },
+    {
+      "source": "fig/case_study_pricing_jdrl_pomo.pdf",
+      "destination": "fig/case_study_pricing_jdrl_pomo.pdf",
+      "sha256": "30a7e000f1d147ff257201c180f794c1a27b4aaf6529d82668fdaf0053fecbbc"
+    },
+    {
+      "source": "fig/case_study_pricing_saca.pdf",
+      "destination": "fig/case_study_pricing_saca.pdf",
+      "sha256": "b3d075cb07dfe93595b0b996d679db517ee822feecf47d30318b730c35872d5d"
+    },
+    {
+      "source": "fig/case_study_pricing_st_saca.pdf",
+      "destination": "fig/case_study_pricing_st_saca.pdf",
+      "sha256": "ea9ef99986885123ce326f3e7825908bd42f56304c95133627701fdb81edd505"
+    },
+    {
+      "source": "fig/comparison_cost.pdf",
+      "destination": "fig/comparison_cost.pdf",
+      "sha256": "a29b351ff7bacf001815b9ce7639e4d9f801850ed049b41af3beb1f57529f07a"
+    },
+    {
+      "source": "fig/comparison_orr.pdf",
+      "destination": "fig/comparison_orr.pdf",
+      "sha256": "e3c83249da43c569f7afa8c3d6dcadef262c63128ed7130b45ac576fc92d21d6"
+    },
+    {
+      "source": "fig/comparison_revenue.pdf",
+      "destination": "fig/comparison_revenue.pdf",
+      "sha256": "3947d52cac1b5d50e661b64614c1e3975823b7bff3142b9146d621831b30ff5f"
+    },
+    {
+      "source": "fig/comparison_total_reward.pdf",
+      "destination": "fig/comparison_total_reward.pdf",
+      "sha256": "5f2332f434e618265d81d127f617a748a09d6fc7d3161891404d97fbd258c3cc"
+    },
+    {
+      "source": "fig/parameter_sensitivity_orr.pdf",
+      "destination": "fig/parameter_sensitivity_orr.pdf",
+      "sha256": "08ab2202bcb09fb1125a7164a788d503eef24d68e81b2c1f4d6e4e5a3518d0b0"
+    },
+    {
+      "source": "fig/photo/Gao.jpg",
+      "destination": "fig/photo/Gao.jpg",
+      "sha256": "905a97c2635698baaae63a0bda5dff666ad19d75da54c09f08c45ccef32d85aa"
+    },
+    {
+      "source": "fig/photo/binwang.jpg",
+      "destination": "fig/photo/binwang.jpg",
+      "sha256": "889301be75dee668841299a51f0f3bcefef9355c544df8bbacebebadb1eece9b"
+    },
+    {
+      "source": "fig/photo/pengfeidu.jpeg",
+      "destination": "fig/photo/pengfeidu.jpeg",
+      "sha256": "0894afdfff18c710e71c5b3ce83af433113955474f3084260b4e040cfeded854"
+    },
+    {
+      "source": "fig/photo/xiaochunyang.jpg",
+      "destination": "fig/photo/xiaochunyang.jpg",
+      "sha256": "3c78f1de230696a918182695a6e84e657ea6f755b14c5b288c5ebe12767280f0"
+    },
+    {
+      "source": "fig/photo/yucengao.jpg",
+      "destination": "fig/photo/yucengao.jpg",
+      "sha256": "44ed484a5a7bb1cc0c46b1153b796c6f767d4af07244c503a2b8ebc3364d0e5a"
+    },
+    {
+      "source": "fig/station_new.pdf",
+      "destination": "fig/station_new.pdf",
+      "sha256": "c4cdf393a16f56c574bc4249f3a703f135dc0646ba06a9d64691974e62066d04"
+    },
+    {
+      "source": "fig/toyexample.pdf",
+      "destination": "fig/toyexample.pdf",
+      "sha256": "7590c3a88aa860649d402aec30b05c50480f6eae626882cc9895f3b0f8aff947"
+    },
+    {
+      "source": "ref.bib",
+      "destination": "ref.bib",
+      "sha256": "96289f037ba45cfdf73821329c5d4f12f9122ee8f31061a187042224fccf44c5"
+    }
+  ]
+}
