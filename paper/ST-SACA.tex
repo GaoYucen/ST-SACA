@@ -19,6 +19,7 @@
 
 \newtheorem{definition}{Definition}
 \newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
 
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
@@ -52,7 +53,7 @@ Xiaofeng Gao is with Shanghai Key Laboratory of Scalable Computing and Systems, 
 \maketitle
 
 \begin{abstract}
-\textcolor{blue}{Bus-booking platforms have emerged as a critical component of Intelligent Transportation Systems (ITS), bridging the gap between rigid public transit and expensive ride-hailing services. However, operational efficiency is hindered by the intrinsic coupling of three decision-making tasks: Order Dispatching, Route Planning, and Trajectory Pricing, particularly under the challenges of dynamic demand uncertainty. Existing solutions often treat these tasks in isolation or rely on stationary assumptions, failing to adapt to real-world volatility. In this paper, we formally define the Joint order Dispatching, Route planning, and Trajectory Pricing (JDRP) problem and prove its NP-hardness. Moreover, we distinguish between Stationary JDRP and Robust JDRP. We propose ST-SACA, a robust end-to-end framework based on maximum entropy Deep Reinforcement Learning (DRL). Distinguishing itself from standard architectures, ST-SACA incorporates a novel Spatio-Temporal Adaptive Actor that explicitly integrates geographical topology with demand dynamics via self-attention mechanisms, enabling the agent to capture complex spatio-temporal dependencies. Furthermore, we construct a realistic distance-aware demand-supply mechanism and a composite reward function to align profit maximization with service quality. Extensive experiments on a real-world vehicle trajectory dataset demonstrate that ST-SACA significantly outperforms state-of-the-art baselines in terms of long-term profit and order response rate, exhibiting superior robustness and stability in non-stationary environments. Codes are available at \url{https://github.com/GaoYucen/ST-SACA}.}
+\textcolor{blue}{Bus-booking platforms have emerged as a critical component of Intelligent Transportation Systems (ITS), bridging the gap between rigid public transit and expensive ride-hailing services. However, operational efficiency is hindered by the intrinsic coupling of three decision-making tasks: Order Dispatching, Route Planning, and Trajectory Pricing, particularly under time-varying demand with bounded fluctuation amplitude. Existing solutions often treat these tasks in isolation or rely on stationary assumptions, failing to adapt to real-world volatility. In this paper, we formally define the Joint order Dispatching, Route planning, and Trajectory Pricing (JDRP) problem and prove its NP-hardness. Moreover, we distinguish between Stationary JDRP and Robust JDRP. We propose ST-SACA, an end-to-end framework based on maximum entropy Deep Reinforcement Learning (DRL). Distinguishing itself from standard architectures, ST-SACA incorporates a novel Spatio-Temporal Adaptive Actor that explicitly integrates geographical topology with demand dynamics via self-attention mechanisms, enabling the agent to capture spatial dependencies among stations. Furthermore, we construct a realistic distance-aware demand-supply mechanism and a composite reward function to align profit maximization with service quality. Extensive experiments on a real-world vehicle trajectory dataset demonstrate that ST-SACA significantly outperforms state-of-the-art baselines in terms of long-term profit and order response rate, exhibiting stable performance across different fluctuation amplitudes. Codes are available at \url{https://github.com/GaoYucen/ST-SACA}.}
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -82,13 +83,13 @@ However, achieving an efficient and reliable bus-booking service is non-trivial.
 \color{blue}
 To rigorously address these challenges, we formally define the \textbf{Joint order Dispatching, Route planning, and Trajectory Pricing (JDRP)} problem. We prove that JDRP is \textbf{NP-hard} via a reduction from the Traveling Salesman Problem (TSP). \textcolor{blue}{Beyond this inherent combinatorial complexity, the practical difficulty of the problem is further compounded by the specific assumptions regarding environmental dynamics:}
 \begin{itemize}
-    \item \textbf{The Stationary JDRP (S-JDRP):} This variant assumes stationary demand patterns. While easier to solve, this assumption often fails to reflect reality.
-    \item \textbf{The Robust JDRP (R-JDRP):} Real-world platforms must cope with \textbf{dynamic uncertainty}, where demand intensity is non-stationary and governed by unknown distributions. This represents a more generalized and challenging form of the problem.
+    \item \textbf{The Stationary JDRP (S-JDRP):} This variant assumes a constant arrival intensity. While easier to solve, this assumption often fails to reflect reality.
+    \item \textbf{The Robust JDRP (R-JDRP):} Real-world platforms must cope with \textbf{time-varying demand}, where the arrival intensity fluctuates within a bounded amplitude. This represents a more generalized and challenging form of the problem.
 \end{itemize}
 
 \color{black}
 
-Existing commercial solutions, such as customized shuttles with uniform fares or chartered bus services, fail to solve the JDRP effectively due to their lack of granularity and flexibility~\cite{ref:JiangHCRide}. Similarly, traditional academic works often treat these coupled tasks in isolation (multi-stage approaches) or ignore the critical impact of environmental uncertainty~\cite{ref:dm, ref:DPEA, ref:PODP}. While recent research has progressed toward integrated solutions, such as jointly optimizing dispatching and routing~\cite{ref:odrp, ref:Lei2023}, few have established a unified framework that simultaneously optimizes all three tasks while explicitly ensuring robustness in non-stationary environments.
+Existing commercial solutions, such as customized shuttles with uniform fares or chartered bus services, fail to solve the JDRP effectively due to their lack of granularity and flexibility~\cite{ref:JiangHCRide}. Similarly, traditional academic works often treat these coupled tasks in isolation (multi-stage approaches) or ignore the critical impact of environmental uncertainty~\cite{ref:dm, ref:DPEA, ref:PODP}. While recent research has progressed toward integrated solutions, such as jointly optimizing dispatching and routing~\cite{ref:odrp, ref:Lei2023}, few have established a unified framework that simultaneously optimizes all three tasks while explicitly adapting to time-varying demand.
 
 % the customized bus service and the chartered bus service provides flexible services. The customized bus service\footnote{\url{https://en.bcia.com.cn/jcbs.html#offSet}} means that the passenger can specify any destination within the city and the fare is uniformly $50$ CNY per person with a group of at least six persons. Simultaneously, the chartered bus service\footnote{\url{http://www.tx-trans.com/index.php/Index/GovOrder}} means that passengers can select proper chartered bus type, determine the time to use the bus and the destination of the journey. After the order is submitted, the platform will contact the passengers to confirm the service information. Although those specialized services address some traffic demand, the price of customized bus is unfair to passengers going to different destinations, and chartered buses cannot serve individual passenger~\cite{ref:JiangHCRide}.}
 
@@ -101,24 +102,24 @@ Existing commercial solutions, such as customized shuttles with uniform fares or
 % \textcolor{red}{However, the original SACA framework relies on a deterministic environment assumption, neglecting the dynamic uncertainty inherent in real-world operations, such as stochastic traffic conditions and fluctuating demand. Furthermore, it treats spatial inputs as flat features, ignoring the critical topological dependencies between stations. To address these challenges, we extend SACA to \textbf{ST-SACA}, a robust framework equipped with a \textbf{Spatio-Temporal Adaptive Actor}. Unlike the original flat architecture, our new actor explicitly integrates geographical coordinates with demand data using a self-attention mechanism. This allows the agent to capture \textbf{spatial topological dependencies} and learn robust pricing and routing strategies that adapt to environmental variations.}
 
 \color{blue}
-In this paper, we propose \textbf{ST-SACA}, a robust end-to-end framework designed to solve the JDRP problem. The framework is built upon a foundational Soft Actor-Critic (SAC) backbone synergized with attention mechanisms. This architecture fundamentally addresses the coupling of dispatching, routing, and pricing, establishing a unified optimization paradigm. However, standard architectures often treat spatial inputs as flat features, limiting their efficacy in non-stationary environments. To overcome this, ST-SACA distinguishes itself by incorporating a novel \textbf{Spatio-Temporal Adaptive Actor}. This enhanced component explicitly integrates geographical coordinates with demand data via self-attention, enabling the agent to capture topological dependencies and learn robust strategies against dynamic uncertainty. Consequently, ST-SACA not only inherits the joint optimization capability of the base model but also possesses the necessary robustness for real-world deployment.
+In this paper, we propose \textbf{ST-SACA}, an end-to-end framework designed to solve the JDRP problem. The framework is built upon a foundational Soft Actor-Critic (SAC) backbone synergized with attention mechanisms. This architecture fundamentally addresses the coupling of dispatching, routing, and pricing, establishing a unified optimization paradigm. However, standard architectures often treat spatial inputs as flat features, limiting their efficacy in time-varying environments. To overcome this, ST-SACA distinguishes itself by incorporating a novel \textbf{Spatio-Temporal Adaptive Actor}. This enhanced component explicitly integrates geographical coordinates with demand data via self-attention, enabling the agent to capture topological dependencies and learn adaptive strategies across demand fluctuations. Consequently, ST-SACA not only inherits the joint optimization capability of the base model but also maintains effectiveness across different fluctuation amplitudes.
 
 Beyond the above innovations, we also ensure the framework's economic viability through a \textbf{realistic mechanism design}. We formulate the bilateral economic interaction between passengers and the platform by constructing distance-aware demand-supply functions and a composite reward scheme. These designs capture both passenger sensitivities and supply willingness, and balance conflicting operational objectives, ensuring ST-SACA's applicability in realistic settings.
 
 \color{black}
 
-We evaluate our methods using a real-world dataset. The experimental results demonstrate that our framework not only outperforms baselines in terms of the optimization objective but also exhibits superior robustness in uncertain scenarios.
+We evaluate our methods using a real-world dataset. The experimental results demonstrate that our framework outperforms baselines in terms of the optimization objective and maintains stable performance across different fluctuation amplitudes.
 
 \color{blue}
 The main contributions are summarized as follows:
 \begin{itemize}
     \item \textbf{Problem Formulation and Analysis:} We systematically formulate the JDRP problem for bus-booking platforms and rigorously prove its NP-hardness via a reduction from the TSP. Crucially, we \textbf{explicitly distinguish} between the \textbf{Stationary JDRP} and the \textbf{Robust JDRP}, establishing a formalized bridge between theoretical simplifications and real-world volatility.
     
-    \item \textbf{End-to-End Robust Framework:} We propose \textbf{ST-SACA}, an end-to-end framework that jointly optimizes dispatching, routing, and pricing. ST-SACA incorporates a novel \textbf{Spatio-Temporal Adaptive Actor}, which explicitly integrates geographical topology with demand features via self-attention, enabling the agent to learn resilient strategies against environmental uncertainty.
+    \item \textbf{End-to-End Adaptive Framework:} We propose \textbf{ST-SACA}, an end-to-end framework that jointly optimizes dispatching, routing, and pricing. ST-SACA incorporates a novel \textbf{Spatio-Temporal Adaptive Actor}, which explicitly integrates geographical topology with demand features via self-attention, enabling the agent to learn adaptive strategies across demand fluctuations.
     
     \item \textbf{Realistic Mechanism Design:} We formulate the \textbf{economic interaction} between passengers and the platform by constructing distance-aware demand and supply functions. These designs capture not only the heterogeneous price sensitivity of passengers but also the supply willingness of the platform. Furthermore, we construct a multi-objective composite reward function that balances profit, order response rate, and operational costs to guide the policy toward long-term optimality.
     
-    \item \textbf{Extensive Real-World Validation:} We conduct comprehensive experiments using a real-world trajectory dataset. The results demonstrate that our model outperforms state-of-the-art baselines, and exhibits superior robustness and performance stability under non-stationary environments.
+    \item \textbf{Realistic Case Study:} We conduct experiments using a real-world trajectory dataset from Chengdu. The results demonstrate that our model outperforms state-of-the-art baselines and maintains stable performance across different fluctuation amplitudes.
 \end{itemize}
 
 
@@ -140,14 +141,16 @@ In the context of bus-booking, pricing must be \textit{trajectory-aware}. Existi
 
 \subsection{Spatio-Temporal Representation and Robust Learning} Effective decision-making in transportation requires capturing complex spatio-temporal dependencies. While early works relied on statistical models like ARIMA, deep learning approaches such as Graph Neural Networks (GNNs) and Attention mechanisms have become the state-of-the-art for modeling traffic flows~\cite{ref:STPivotal} and spatial correlations~\cite{ijcai/YuYZ18}. However, standard RL architectures used in dispatching often treat the system state as a flat feature vector, neglecting the underlying topological structure of the station network.
 
-Furthermore, real-world operations are plagued by dynamic uncertainty. Standard RL assumes a stationary environment, leading to performance degradation when deployed in non-stationary real-world scenarios. Robust RL aims to learn policies resilient to environmental parameter variations~\cite{ref:RobustRoute, ref:RobustMARL} or out-of-distribution scenarios~\cite{ref:Yoon2024IJCAI}.
+Furthermore, real-world operations face time-varying demand. Standard RL assumes a stationary environment, leading to performance degradation when deployed in time-varying real-world scenarios. Robust RL aims to learn policies resilient to environmental parameter variations~\cite{ref:RobustRoute, ref:RobustMARL} or out-of-distribution scenarios~\cite{ref:Yoon2024IJCAI}.
 
-Although our preliminary work, SACA~\cite{ref:saca}, proposed a joint optimization framework, it relied on stationary environmental assumptions. There is a lack of unified frameworks that explicitly model the topological dependencies of station networks while ensuring robustness against non-stationary demand. Our proposed ST-SACA fills this void by introducing a Spatio-Temporal Adaptive Actor within a maximum entropy RL framework to cope with the non-stationary demand.
+Although our preliminary work, SACA~\cite{ref:saca}, proposed a joint optimization framework, it relied on stationary environmental assumptions. There is a lack of unified frameworks that explicitly model the topological dependencies of station networks while adapting to time-varying demand with bounded fluctuation. Our proposed ST-SACA fills this void by introducing a Spatio-Temporal Adaptive Actor within a maximum entropy RL framework to cope with such demand.
+
+\textbf{Positioning.} Unlike spatio-temporal forecasting models that predict future traffic from historical observations, this work uses spatial attention as a state representation for sequential decision-making. The attention operates on station coordinates and current demand; it does not explicitly encode road-network connectivity, and we do not claim to learn a traffic dynamics model. Recent surveys on spatio-temporal graph learning and instant-delivery route prediction provide relevant background~\cite{ref:Jin2024STGNN, ref:Jin2023Dilated, ref:Wen2024Instant}; we leave a detailed comparison with road-network-aware models to future work.
 
 \section{Preliminaries and Problem Formulation}
 \label{sec:problem}
 
-In this section, we formally formulate the \textit{Joint order Dispatching, Route planning, and trajectory Pricing} (JDRP) problem. We first introduce the foundational entities and the general problem formulation. Subsequently, we discuss two variants of the JDRP problem: the \textit{Stationary JDRP} (S-JDRP)~\cite{ref:odrp} problem under stationary demand, and the \textit{Robust JDRP} (R-JDRP) problem under dynamic uncertainty. The key notations are summarized in Table~\ref{tab:not}.
+In this section, we formally formulate the \textit{Joint order Dispatching, Route planning, and trajectory Pricing} (JDRP) problem. We first introduce the foundational entities and the general problem formulation. Subsequently, we discuss two variants of the JDRP problem: the \textit{Stationary JDRP} (S-JDRP)~\cite{ref:odrp} problem under stationary demand, and the \textit{Robust JDRP} (R-JDRP) problem under time-varying demand. The key notations are summarized in Table~\ref{tab:not}.
 
 %  Unlike traditional deterministic models, we incorporate dynamic uncertainty directly into the problem definition to reflect real-world operating conditions.
 
@@ -172,7 +175,7 @@ In this section, we formally formulate the \textit{Joint order Dispatching, Rout
  & $\mathcal{O}^t$ & Batch of newly arrived orders at time slot $t$ \\
 \midrule
 \multirow{2}{*}{Uncertainty} 
- & $\mathcal{P}(\lambda^t)$ & Unknown non-stationary demand distribution \\
+ & $\mathcal{P}(\lambda^t)$ & Time-varying demand intensity with bounded fluctuation \\
  & $\lambda^t$ & Time-varying demand intensity parameter \\
 \midrule
 \multirow{3}{*}{Order Entity} 
@@ -220,7 +223,7 @@ The operation time horizon $T$ of the platform is divided into equal-length time
 
 \begin{definition}
 (Demand).
-In real-world scenarios, passenger demand is stochastic and fluctuates over time. We model the underlying demand potential at station $k$ during time slot $t$ as a variable governed by a time-dependent probability distribution $\mathcal{P}(\lambda^t_k)$, where $\lambda^t_k$ represents the varying demand intensity. Crucially, this distribution is \textbf{unknown} to the platform.
+In real-world scenarios, passenger demand is stochastic and fluctuates over time. We model the underlying demand potential at station $k$ during time slot $t$ as a variable governed by a time-dependent probability distribution $\mathcal{P}(\lambda^t_k)$, where $\lambda^t_k$ represents the varying demand intensity. The platform does not observe future intensity; it only observes the realized demand at each slot.
 \end{definition}
 
 \begin{definition}
@@ -253,13 +256,13 @@ Let $x_{ij}^t \in \{0, 1\}$ be the binary decision variable and $p_j$ be the dyn
 \begin{definition}
     (Platform Profit). The platform's profit in time slot $t$ for a given order set $\mathcal{O}^t$ and bus set $\mathcal{B}^t$ is
     \begin{equation}
-        R^t = \sum_{o_j \in \mathcal{O}^t} \left( p_j \cdot \sum_{b_i \in \mathcal{B}^t} x_{ij}^t \right) - \sum_{b_i \in \mathcal{B}^t} \text{cost}_i,
+        R^t = \sum_{o_j \in \mathcal{O}^t} \left( p_j \cdot \sum_{b_i \in \mathcal{B}^t} x_{ij}^t \right) - \sum_{b_i \in \mathcal{B}^t} \text{cost}_i,\label{eq:profit}
     \end{equation}
     where $\text{cost}_i = \beta_d \cdot dis_i$ is the operational cost for bus $b_i$, with $dis_i$ being the travel distance for bus $b_i$, and $\beta_d$ is the cost per unit distance.
 \end{definition}
 
 \begin{definition}(JDRP Problem).
-Given the station network $G$ and the bus fleet $\mathcal{B}$, consider an environment where the passenger demand is governed by an unknown stochastic process. \textbf{Joint order Dispatching, Route planning, and trajectory Pricing (JDRP)} problem aims to learn a policy $\pi$ that generates the decision tuple $\langle \mathbf{Price}^t, \mathbf{X}^t, \mathbf{Route}^t \rangle$ for $\mathcal{O}^t$, $\mathcal{B}^t$ to maximize the \textbf{expected} long-term profit over the horizon $T$, subject to the above constraints. The formulation is as follows:
+Given the station network $G$ and the bus fleet $\mathcal{B}$, consider an environment where the passenger demand is governed by a time-varying arrival intensity. \textbf{Joint order Dispatching, Route planning, and trajectory Pricing (JDRP)} problem aims to learn a policy $\pi$ that generates the decision tuple $\langle \mathbf{Price}^t, \mathbf{X}^t, \mathbf{Route}^t \rangle$ for $\mathcal{O}^t$, $\mathcal{B}^t$ to maximize the \textbf{expected} long-term profit over the horizon $T$, subject to the above constraints. The formulation is as follows:
 \begin{eqnarray}
     \max_{\pi} & \sum_{t=1}^T \mathbb{E}_{\mathcal{O}^t \sim \mathcal{P}(\lambda^t)}\left[R^t\right] \\
     \text{ s.t. } & \sum_{b_i \in \mathcal{B}^t} x_{ij}^t \leq 1, \quad \forall o_j \in \mathcal{O}^t \label{eq:unique} \\
@@ -274,13 +277,15 @@ Given the station network $G$ and the bus fleet $\mathcal{B}$, consider an envir
 \subsection{Problem Variants under Stationarity Assumptions}
 \label{sec:stationarity_def}
 
-The complexity of the JDRP problem relies heavily on the temporal properties of passenger demand. We formulate two problem variants based on the \textbf{stationarity assumption} of the demand distribution.
+The temporal properties of passenger demand determine the difficulty of the JDRP problem. Rather than modeling the variance of a random demand process, we characterize the environment by the amplitude of intra-day demand fluctuation, and formulate two variants accordingly.
 
 \textbf{1) The Stationary JDRP (S-JDRP):}
-This variant operates under the assumption that the demand distribution is \textbf{stationary} over time. In this setting, demand patterns are stable or strictly cyclic. This formulation aligns with the assumptions made in our preliminary work~\cite{ref:odrp} and most traditional multi-stage approaches.
+The arrival intensity is constant over the decision horizon, i.e., $\lambda(t) \equiv \lambda_{base}$ for all $t$. Passenger arrivals remain stochastic and are realized as Poisson samples, but the underlying intensity does not evolve with time. This formulation aligns with the assumptions made in our preliminary work~\cite{ref:odrp} and most traditional multi-stage approaches.
 
-\textbf{2) The Robust JDRP under Non-Stationarity (R-JDRP):}
-This variant relaxes the stationarity assumption to model realistic urban dynamics. Here, the demand intensity is governed by a \textbf{non-stationary} stochastic process with unknown distributional shifts. This represents a generalized and more challenging form of the problem, requiring algorithms with strong adaptability and robustness.
+\textbf{2) The Robust JDRP under Time-Varying Uncertainty (R-JDRP):}
+The arrival intensity is non-homogeneous in time and fluctuates within a bounded amplitude, i.e., $|\lambda(t)-\lambda_{base}| \le A$. Here $A$ denotes the \emph{uncertainty scale}, i.e., the amplitude of the fluctuation, rather than the variance of a random process. The platform does not observe future intensity; it only observes the realized orders at each slot, and must remain effective across different fluctuation amplitudes. This variant is more challenging than S-JDRP because the policy must cope with time-varying demand levels rather than a stable one.
+
+\textbf{Remark.} Demand processes whose law is unknown or changes abruptly at unknown times are not covered by R-JDRP and are left for future work.
 
 \subsection{Case Study and NP-Hardness Analysis}
 
@@ -293,19 +298,21 @@ This variant relaxes the stationarity assumption to model realistic urban dynami
 
 The JDRP problem involves joint decision-making across three coupled tasks. The platform must simultaneously balance pricing (to filter demand), dispatching (to match capacity), and routing (to minimize cost). A toy example of a single time slot for the JDRP problem is shown in Figure~\ref{fig:toy}, where the solid point represents the departure station $DS$, each point represents the destination of the passenger, and edges represent planned routes. In the toy example, four buses depart from the same departure station $DS$, while some orders with different destinations are submitted to the platform. Under constraints mentioned above, the platform decides which orders to accept, determines their prices, and plans routes for buses to maximize the profit, while may reserve some buses for use in the next time slot, such as $b_4$. $d_2$ and $d_{12}$ denoted by red hollow points are rejected. Specifically, though $d_2$ is close to $DS$ which implying the cost for platform to passing by $d_2$ is low, a low price of orders to $d_2$ results in rejection. $d_{12}$ is not passed by because $d_{12}$ is far from $DS$. Besides, the route of $b_1$ consists of destinations of the orders assigned to the bus, i.e., $r_1 = [d_1, d_3, d_5, d_8, d_{10}]$. %Toy example
 
-We prove the JDRP problem is NP-hard via a reduction from the Traveling Salesman Problem (TSP).
+\begin{theorem}
+The JDRP problem is NP-hard.
+\end{theorem}
 
 \begin{proof}
-Consider a simplified instance with a single time slot, one bus with infinite capacity, and deterministic traffic. If we fix the price such that all orders must be accepted to maximize the profit, the problem reduces to finding the shortest path visiting all destinations and returning to the depot, which is exactly the TSP. Since TSP is NP-hard, the more general JDRP is also NP-hard.
+We prove the result via a reduction from the Traveling Salesman Problem (TSP). Consider a simplified instance with a single time slot, one bus with infinite capacity, and deterministic traffic. If we fix the price such that all orders must be accepted to maximize the profit, the problem reduces to finding the shortest path visiting all destinations and returning to the depot, which is exactly the TSP. Since TSP is NP-hard, the more general JDRP is also NP-hard.
 \end{proof}
 
 \section{The ST-SACA Framework}
 \label{sec:framework}
 
-The proposed \textbf{ST-SACA} framework is an end-to-end solution designed to address the JDRP problem under dynamic uncertainty. 
+The proposed \textbf{ST-SACA} framework is an end-to-end solution designed to address the JDRP problem under time-varying demand. 
 As illustrated in Figure~\ref{fig:framework}, the framework operates in a hierarchical manner: 
 (1) The \textbf{Demand-Supply Interaction} module models how market demand responds to pricing strategies; 
-(2) The \textbf{Robust Trajectory Pricing and Dispatching} module, powered by a Spatio-Temporal Adaptive Actor-Critic agent, determines the optimal pricing and seat allocation to maximize long-term profit; 
+(2) The \textbf{Adaptive Trajectory Pricing and Dispatching} module, powered by a Spatio-Temporal Adaptive Actor-Critic agent, determines the optimal pricing and seat allocation to maximize long-term profit; 
 (3) The \textbf{Attention-Based Routing} module utilizes an attention-based network to execute efficient route planning based on the pricing and dispatching decisions.
 
 \begin{figure}[htbp]
@@ -347,7 +354,7 @@ Consequently, the number of successfully dispatched orders $O^t_k$ and the immed
     O^t_k = \min(D^t_k, S^t_k), \quad R^{t} = \sum_k p^t_k O^t_k - \sum_{b_i \in \mathcal{B}^t} \text{cost}_i.
 \end{equation}
 
-\subsection{Robust Trajectory Pricing and Dispatching}
+\subsection{Adaptive Trajectory Pricing and Dispatching}
 \label{sec:sac}
 
 This module serves as the decision-making core of the ST-SACA framework. To address the continuous nature of pricing control and the stochasticity of passenger demand, we model the problem as a Markov Decision Process (MDP) and employ a customized Soft Actor-Critic (SAC) algorithm. The continuous action spaces and maximum entropy objective of SAC is particularly suitable for this task, as it encourages exploration, preventing the policy from collapsing into suboptimal deterministic behaviors in uncertain environments.
@@ -368,7 +375,7 @@ To ensure the sustainability of the platform, the reward function must balance i
 \begin{equation}
     Reward^t = R^t + \lambda_{orr} \cdot ORR^t,
 \end{equation}
-where $R^t$ is the revenue minus operational costs (as defined in Eq. (5)), and $ORR^t = (\sum_k O^t_k) / (\sum_k D^t_k)$ quantifies the platform's ability to satisfy demand. The coefficient $\lambda_{orr}$ balances the profit maximization and service responsiveness.
+where $R^t$ is the revenue minus operational costs (as defined in Eq.~\eqref{eq:profit}), and $ORR^t = (\sum_k O^t_k) / (\sum_k D^t_k)$ quantifies the platform's ability to satisfy demand. The coefficient $\lambda_{orr}$ balances the profit maximization and service responsiveness.
 
 \textbf{Transition ($\mathcal{T}$):} 
 The state transition is governed by the dynamics of order fulfillment and fleet circulation. The available capacity for the subsequent time slot, $N_{s}^{t+1}$, is updated based on the number of newly dispatched buses and returning buses:
@@ -380,7 +387,7 @@ where $\mathcal{B}^t_{disp}$ is the set of buses dispatched at $t$, $\mathbb{I}(
 \color{blue}
 \subsubsection{Spatio-Temporal Adaptive Actor}
 \label{sec:actor}
-Standard reinforcement learning approaches often treat the spatial state $\mathbf{N}_p^t$ as a flat feature vector, neglecting the underlying topological dependencies between stations. However, in urban transportation, demand fluctuations and destination locations are often spatially correlated. To enhance robustness, we design a \textit{Spatio-Temporal Adaptive Actor} that explicitly captures the topological dependencies.
+Standard reinforcement learning approaches often treat the spatial state $\mathbf{N}_p^t$ as a flat feature vector, neglecting the underlying topological dependencies between stations. However, in urban transportation, demand fluctuations and destination locations are often spatially correlated. To capture these spatial dependencies, we design a \textit{Spatio-Temporal Adaptive Actor} that explicitly encodes station-level demand and coordinates.
 
 \textbf{Coordinate-Aware Embedding:} 
 First, we fuse the dynamic demand with static geographical information. For each station $k$, we construct a raw feature vector $v_k = [{N_p}^t_k, x_k, y_k]$, where $(x_k, y_k)$ are the normalized coordinates. This vector is projected into a high-dimensional embedding space via a learnable transformation:
@@ -429,8 +436,7 @@ Crucially, we utilize $L$ layers of Multi-Head Attention (MHA) followed by Batch
 
 \textbf{Decoder (Attention-Based Pointer):} 
 The decoder constructs the route sequentially using an attention-based pointer mechanism. 
-At each step $j$, the decoder computes an attention distribution over all encoder embeddings to probabilistically select the next station. 
-The attention score $u_{k}^{i}$, which reflects the compatibility between the current decoding context and candidate station $k$, is calculated as:
+At each step $j$, the decoder computes an attention distribution over all encoder embeddings to probabilistically select the next station. The attention score $u_{k}^{j}$, which reflects the compatibility between the current decoding context and candidate station $k$, is calculated as:
 \begin{gather}
     u_{k}^{j} = C \cdot \tanh(\mathbf{W}_{q} h_{decoder}^j + \mathbf{W}_{k} h_{k}^{(L)}), \label{eq:att} \\
     p(k | r_{1:j-1}) = \text{softmax}(u^j), \label{eq:pro}
@@ -452,7 +458,7 @@ where $r_{1:j-1}$ denotes the partial route visited so far. Here, masking techni
     \WHILE{bus $b_i$ has not returned to $DS$}
         \STATE \textbf{Masking:} Identify invalid nodes $\mathcal{V}_{invalid}$ (visited)
         \STATE Set attention scores: $u_k \leftarrow -\infty, \forall v_k \in \mathcal{V}_{invalid}$
-        \STATE \textbf{Attention:} Compute probability via Eq. (13) and (14)
+        \STATE \textbf{Attention:} Compute probability via Eq.~\eqref{eq:att} and \eqref{eq:pro}
         \STATE \textbf{Selection:} Select next node $v_{next} = \arg\max P$
         
         \IF{$v_{next}$ is $DS$}
@@ -487,7 +493,7 @@ Integrating the Spatio-Temporal Adaptive Actor and the Attention-based Routing m
 \FOR{episode $ep = 1$ to $MaxEp$}
     \STATE Reset environment, observe initial state $s^1 = \langle \mathbf{N}_p^1, \mathcal{B}^1 \rangle$
     \FOR{time slot $t = 1$ to $T$}
-        \STATE \textbf{I. Spatio-Temporal Decision}
+        \STATE \textbf{I. Pricing and Dispatching Decision}
         \STATE Generate embeddings $\mathbf{e}_k$ and global state $\mathbf{s}_{global}$
         \STATE Sample action $a^t \sim \pi_\phi(\cdot|s^t)$
 
@@ -518,7 +524,7 @@ Integrating the Spatio-Temporal Adaptive Actor and the Attention-based Routing m
 \STATE Generate spatial-aware embeddings for current demand
 \STATE Construct state vector: $s^t \leftarrow \langle \mathbf{N}_p^t, \mathbf{B}^t \rangle$
 
-\STATE \textbf{Phase II: Robust Pricing and Dispatching}
+\STATE \textbf{Phase II: Adaptive Pricing and Dispatching}
 \STATE Generate action $a^t = \langle \mathbf{Price}^t, \boldsymbol{\eta}^t \rangle \leftarrow \pi_\phi(s^t)$ 
 \STATE Derive accepted order set $\hat{\mathcal{O}}^t$
 
@@ -536,38 +542,54 @@ Integrating the Spatio-Temporal Adaptive Actor and the Attention-based Routing m
 \subsection{Theoretical Analysis}
 \label{sec:theory}
 
-In this section, we provide a rigorous analysis of the computational complexity and the theoretical properties concerning the convergence and robustness of the proposed ST-SACA.
+In this section, we analyze the computational complexity of the proposed ST-SACA and discuss its convergence behavior and robustness.
 
-\subsubsection{Computational Complexity Analysis}
+\subsubsection{Computational Complexity}
+\begin{proposition}
+The per-slot inference complexity of ST-SACA is $O(|V|^2 d + |V| d^2 + M^2 d)$, where $|V|$ is the number of stations, $M$ is the number of destination nodes in the routing instance, and $d$ is the embedding dimension.
+\end{proposition}
+\begin{proof}
 The real-time inference process in each time slot is composed of two sequential phases: the pricing and dispatching phase executed by the Spatio-Temporal Adaptive Policy Actor and the routing phase executed by the Attention-based Routing module. Let $d$ denote the feature embedding dimension (i.e., the size of vectors $\mathbf{e}_k$ in Eq. (8) and $h_k$ in Eq. (11)). Note that the key dimension $d_k$ used in Eq. (9) is typically proportional to $d$ (e.g., $d_k = d/H$ in multi-head attention), so the asymptotic complexity is governed by $d$.
 
-\textbf{Pricing and Dispatching Phase Complexity:} 
-The core computational overhead of the pricing and dispatching actor stems from the self-attention mechanism. For an input sequence of length $|V|$, the time complexity of calculating the attention scores is $O(|V|^2 \cdot d)$, while the subsequent feed-forward layers require $O(|V| \cdot d^2)$. Consequently, the total complexity for the pricing and dispatching phase is $O(|V|^2 \cdot d + |V| \cdot d^2)$. Given that the number of stations $|V|$ in a typical bus-booking scenario is relatively small (e.g., $|V| \approx 30$ in our experiments), this quadratic dependency remains computationally lightweight.
+\textbf{Pricing and dispatching phase.} The core computational overhead stems from the self-attention mechanism. For an input sequence of length $|V|$, calculating the attention scores costs $O(|V|^2 d)$, and the subsequent feed-forward layers cost $O(|V| d^2)$. The total for this phase is therefore $O(|V|^2 d + |V| d^2)$.
 
-\textbf{Routing Phase Complexity:} 
-Let $M$ be the number of destinations of accepted orders, where $M \leq |V|$. The routing module employs an encoder-decoder architecture. The encoder processes the station embeddings with a self-attention complexity of $O(M^2 \cdot d)$. The decoder generates the route auto-regressively. Each decoding step performs an attention operation over the $M$ encoder outputs, incurring $O(M \cdot d)$ cost. Thus, the total decoding complexity is $O(M^2 \cdot d)$.
+\textbf{Routing phase.} Let $M$ be the number of destinations of accepted orders, where $M \leq |V|$. The encoder processes the station embeddings with a self-attention complexity of $O(M^2 d)$. The decoder generates the route auto-regressively, and each decoding step performs an attention operation over the $M$ encoder outputs, incurring $O(M d)$ cost. The total decoding complexity is $O(M^2 d)$.
 
-\textbf{Overall Complexity:} 
-The aggregate inference complexity per time slot is $O((|V|^2 + M^2) \cdot d)$. This polynomial complexity ensures that ST-SACA can generate solutions within milliseconds, satisfying the real-time requirements of online bus-booking platforms.
+Combining the two phases gives $O(|V|^2 d + |V| d^2 + M^2 d)$ per slot.
+\end{proof}
 
-\subsubsection{Convergence and Robustness Properties}
-The ST-SACA framework is theoretically grounded in the maximum entropy reinforcement learning paradigm, which offers distinct advantages in terms of convergence stability and robustness against environmental uncertainty.
+\subsubsection{Conditional Lipschitz Property of the Attention Block}
+\begin{proposition}
+Assume that (A1) the spectral norms of all weight matrices in the attention block are bounded by $W_{\max}$, (A2) the input coordinates and demand values satisfy $\|x\| \le B$, and (A3) the softmax temperature satisfies $\tau > 0$. Then the attention block $f$ is $L$-Lipschitz on the bounded input domain, i.e., $\|f(x)-f(y)\| \le L\|x-y\|$, where $L$ depends on $W_{\max}$, $B$, $\tau$, the number of heads $H$, and the embedding dimension $d$.
+\end{proposition}
+\begin{proof}
+Each linear projection is Lipschitz with a constant equal to its spectral norm. The softmax operation is Lipschitz on the simplex, with a Jacobian norm bounded by $1/\tau$. Layer normalization and residual connections are Lipschitz on the bounded input domain. Since the attention block is a composition of these operations, its Lipschitz constant is the product of the corresponding constants and therefore depends only on $W_{\max}$, $B$, $\tau$, $H$, and $d$.
+\end{proof}
 
-\textbf{Convergence Guarantee:} 
+\subsubsection{Performance under Bounded Demand Fluctuation}
+\begin{proposition}
+Assume that (A1) the reward is $L_r$-Lipschitz with respect to the demand state, (A2) the transition kernel is $L_p$-Lipschitz with respect to the demand intensity, and (A3) the policy is $L_\pi$-Lipschitz with respect to the state. For any two intensity profiles $\lambda$ and $\lambda'$ satisfying $\sup_t |\lambda(t)-\lambda'(t)| \le \Delta$, we have $|J(\pi;\lambda)-J(\pi;\lambda')| \le C_T \Delta$, where $C_T$ depends only on $T$, $L_r$, $L_p$, and $L_\pi$.
+\end{proposition}
+\begin{proof}
+We couple the two arrival processes by aligning their Poisson increments, and bound the one-step divergence between the induced state distributions using $L_r$, $L_p$, and $L_\pi$. Summing the resulting recursion over $T$ slots and applying a Gr\"onwall-type inequality yields the bound with a constant $C_T$ that depends only on $T$, $L_r$, $L_p$, and $L_\pi$.
+\end{proof}
+
+\subsubsection{Convergence Behavior and Robustness: An Analytical Discussion}
+The following discussion provides intuition rather than formal guarantees. The cited results are established for tabular MDPs under a fixed environment and do not directly extend to neural function approximation under time-varying demand.
+
+\textbf{Convergence Behavior:}
 ST-SACA optimizes the maximum entropy objective:
 \begin{equation}
     J(\pi) = \sum_{t=1}^T \mathbb{E}_{(s^t, a^t) \sim \rho_\pi} [r(s^t, a^t) + \alpha \mathcal{H}(\pi(\cdot|s^t))].
 \end{equation}
-Based on the Soft Policy Iteration theorem~\cite{icml/HaarnojaZAL18}, the tabular version of Soft Actor-Critic guarantees monotonic improvement in the Q-value function, i.e., $Q_{new}(s,a) \ge Q_{old}(s,a)$ for all $(s,a)$, leading to the optimal maximum entropy policy. In our continuous state-space implementation using neural function approximators, the inclusion of the entropy term $\alpha \mathcal{H}(\pi(\cdot|s_t))$ effectively convexifies the optimization landscape locally, preventing the policy from premature convergence to sub-optimal deterministic behaviors—a common pitfall in standard actor-critic methods.
+For tabular MDPs, the soft policy iteration theorem~\cite{icml/HaarnojaZAL18} establishes monotonic improvement of the soft Q-function. This result motivates the use of the maximum entropy objective, but it does not constitute a convergence guarantee for the neural-network implementation adopted here, nor for time-varying demand. Empirically, we observe stable learning behavior in Figure~\ref{fig:exper_curve}.
 
-\textbf{Theoretical Robustness:} 
-The robustness of ST-SACA against uncertainty $\lambda^t$ is derived from two key components:
+\textbf{Intuition behind Robustness:}
+We attribute the observed robustness to two design choices, without claiming a formal robustness guarantee:
 \begin{itemize}
-    \item \textbf{Lipschitz Continuity of State Representation:} The Spatio-Temporal Adaptive Actor utilizes coordinate-aware embeddings combined with self-attention. This architecture ensures that the learned state representation $\mathbf{s}_{global}$ is Lipschitz continuous with respect to spatial input perturbations. Specifically, small variations in local demand $N_p^t$ result in bounded changes in the aggregated state $\mathbf{s}_{global}$. This smoothness stabilizes the value function approximation $Q_\theta(s, a)$, reducing the variance of gradient estimates under high uncertainty.
-    \item \textbf{Entropy-Regularized Resilience:} Unlike deterministic policies that overfit to specific trajectory instances, the maximum entropy objective encourages the agent to learn a stochastic policy that captures multiple high-reward modes. This acts as a robust regularizer, enabling the agent to maintain high performance even when the test environment (e.g., demand distribution $\mathcal{P}(\lambda^t)$) deviates slightly from the training distribution.
+    \item \textbf{Smooth state representation:} the coordinate-aware embedding and self-attention produce a state representation that varies smoothly with local demand, which empirically stabilizes the value-function approximation. We do not claim global Lipschitz continuity for the attention module under unconstrained weights.
+    \item \textbf{Entropy-regularized exploration:} the entropy term encourages a stochastic policy that covers multiple high-reward modes, which empirically reduces overfitting to a specific demand realization. This is a qualitative explanation, not a formal regularization bound.
 \end{itemize}
-
-Empirically, these properties translate to the superior stability and faster convergence observed in Figure~\ref{fig:exper_curve}.
 
 \section{Experiments}
 \label{sec:experiments}
@@ -629,12 +651,12 @@ We conduct experiments using the real-world car-hailing order dataset from Didi 
 \subsubsection{Uncertainty Generation}
 We simulate dynamic market environments by introducing stochastic volatility. We model the order arrival process as a Non-Homogeneous Poisson Process (NHPP). Based on the historical demand baseline $\lambda_{base}$, the time-varying intensity $\lambda(t)$ is modeled as:
 \begin{equation}
-    \lambda(t) = \lambda_{base} \cdot (1 + A \sin(\omega t + \varphi))
+    \lambda(t) = \max\{0,\, \lambda_{base} + A \sin(\omega t + \varphi)\}
 \end{equation}
 where $A$ controls the \textbf{Uncertainty Scale} and $\omega$ controls the \textbf{Uncertainty Frequency}. Specifically, a higher $A$ simulates more drastic deviations, while a larger $\omega$ introduces more rapid temporal fluctuations in market conditions, creating a more challenging dynamic environment.
 
 \subsubsection{Baselines}
-Since most existing approaches tackle the problem in a modular fashion, we categorize the baselines based on the architectural complexity and focus on robustness.
+Since most existing approaches tackle the problem in a modular fashion, we categorize the baselines based on the architectural complexity and focus on time-varying demand.
 
 \begin{itemize}
     \item \textbf{Representative Two-Stage Baselines:} These methods represent the standard "pipeline" paradigm, where pricing/dispatching and routing are solved sequentially using established algorithms.
@@ -645,7 +667,7 @@ Since most existing approaches tackle the problem in a modular fashion, we categ
     
     \item \textbf{Advanced Robust \& Composite Baselines:} These are state-of-the-art (SOTA) methods that employ sophisticated mechanisms to enhance specific performance metrics like fairness or robustness.
     \begin{itemize}
-        \item \textbf{GRC-ELG~\cite{ref:Lei2023, ref:Yoon2024IJCAI}:} A composite framework integrating Goal-Conditioned RL for strategic dispatching with an Ensemble of Local and Global (ELG) attention mechanism for routing.
+        \item \textbf{GRC-ELG~\cite{ref:Lei2023}:} A composite framework integrating Goal-Conditioned RL for strategic ispatching with an Ensemble of Local and Global (ELG) attention mechanism for routing.
         \item \textbf{JDRL-POMO~\cite{ref:Sun2022KDD, ref:KwonPOMO2020}:} A strong baseline for robustness. It combines the JDRL dispatching policy with POMO, a routing solver that uses instance augmentation to enhance routing quality.
     \end{itemize}
 
@@ -657,6 +679,8 @@ Since most existing approaches tackle the problem in a modular fashion, we categ
 
 \subsubsection{Implementation Details}
 The algorithm is implemented using PyTorch. The complete set of hyperparameters is summarized in Table~\ref{tab:params}.
+
+\textbf{End-to-end definition.} We use ``end-to-end'' to denote an integrated decision pipeline in which pricing, dispatching, and routing are executed within one environment loop. The routing module is pre-trained and frozen during SAC training; its parameters are not jointly optimized with the actor and critic.
 
 \begin{table}[htbp]
 \caption{\textcolor{blue}{Simulation Parameters and Hyperparameter Settings}}
@@ -696,7 +720,7 @@ The algorithm is implemented using PyTorch. The complete set of hyperparameters 
 
 \color{blue}
 \subsubsection{Performance under Stationary Scenarios}
-First, we validate the effectiveness of our proposed framework under a stationary environment using historical dataset without synthetic uncertainty injection. As shown in Table~\ref{tab:rev}, ST-SACA consistently outperforms the representative two-stage baselines significantly accross different settings. ST-SACA achieves the highest profit with a relatively shorter total travel distance compared to baselines. This confirms that our end-to-end joint optimization strategy can effectively filter out low-value, high-cost orders that multi-stage methods fail to identify, thereby optimizing the long-term profitability of the platform.
+First, we validate the effectiveness of our proposed framework under a stationary environment using historical dataset without synthetic uncertainty injection. As shown in Table~\ref{tab:rev}, ST-SACA consistently outperforms the representative two-stage baselines significantly across different settings. ST-SACA achieves the highest profit with a relatively shorter total travel distance compared to baselines. This confirms that our end-to-end joint optimization strategy can effectively filter out low-value, high-cost orders that multi-stage methods fail to identify, thereby optimizing the long-term profitability of the platform.
 
 \begin{table}[htbp]
 \caption{\textcolor{blue}{Performance Comparison under Stationary Scenario}}
@@ -721,15 +745,16 @@ SACA & 23.25 & 0.10 & 12.17 & 53.97 & 0.21 & 15.85\\
 
 \color{blue}
 
-\subsubsection{Performance under Non-Stationary Scenarios}
-To evaluate the robustness of our framework against environmental uncertainty, we conducted experiments with perturbation parameters $A=5$ and $\omega=1$. Table~\ref{tab:rev_uncertainty} summarizes the quantitative results, and Figure~\ref{fig:exper_curve} illustrates the training dynamics across different metrics. ST-SACA not only yields higher profit but also ensures better public service quality and training stability under uncertain conditions.
+\subsubsection{Performance under Time-Varying Demand}
+% TODO(decision): Table V currently states A=5, but its reported values correspond to the A=10 row of Table VI. Confirm the intended setting before submission.
+To evaluate the performance of our framework against time-varying demand, we conducted experiments with perturbation parameters $A=5$ and $\omega=1$. Table~\ref{tab:rev_uncertainty} summarizes the quantitative results, and Figure~\ref{fig:exper_curve} illustrates the training dynamics across different metrics. ST-SACA not only yields higher profit but also ensures better public service quality and training stability under uncertain conditions.
 
-As shown in Table~\ref{tab:rev_uncertainty}, ST-SACA demonstrates a significant performance advantage over all baselines. Specifically, ST-SACA achieves the highest reward and profit, which demonstrates that by explicitly modeling topological dependencies via the Spatio-Temporal Adaptive Actor, ST-SACA effectively mitigates the impact of random noise, leading to superior decision-making robustness. Besides, ST-SACA strikes the best balance between operational cost and service quality. It achieves the highest ORR while maintaining a moderate cost. This demonstrates that our model is capable of identifying and fulfilling high-value orders—even those requiring complex routing—thereby maximizing the composite Total Reward. In constract, JDRL-POMO's ORR is remarkably low, indicating a conservative strategy that prioritizes cost minimization over service coverage. GRC-ELG achieves a better ORR but incurs the highest operational cost, suggesting an inefficient routing logic when demand density increases.
+As shown in Table~\ref{tab:rev_uncertainty}, ST-SACA demonstrates a significant performance advantage over all baselines. Specifically, ST-SACA achieves the highest reward and profit, which demonstrates that by explicitly modeling topological dependencies via the Spatio-Temporal Adaptive Actor, ST-SACA effectively mitigates the impact of random noise, improving decision stability. Besides, ST-SACA strikes the best balance between operational cost and service quality. It achieves the highest ORR while maintaining a moderate cost. This demonstrates that our model is capable of identifying and fulfilling high-value orders—even those requiring complex routing—thereby maximizing the composite Total Reward. In contrast, JDRL-POMO's ORR is remarkably low, indicating a conservative strategy that prioritizes cost minimization over service coverage. GRC-ELG achieves a better ORR but incurs the highest operational cost, suggesting an inefficient routing logic when demand density increases.
 
-Through the learning process depicted in Figure~\ref{fig:exper_curve}, we observe that ST-SACA not only attains higher final performance but also exhibits superior training stability compared to baselines. ST-SACA converges to a stable, high-reward policy, which confirms the effectiveness of the entropy-regularized objective in our SAC framework. The ORR curve reveals the another core driver of our performance. While baselines plateau around $0.09-0.16$, ST-SACA continuously learns to expand its service coverage, stabilizing at $\approx 0.18$. This implies that as training progresses, the Spatio-Temporal Actor becomes increasingly proficient at coordinating fleet resources to cover "hotspot" areas dynamically.
+Through the learning process depicted in Figure~\ref{fig:exper_curve}, we observe that ST-SACA not only attains higher final performance but also exhibits superior training stability compared to baselines. ST-SACA converges to a stable, high-reward policy, which confirms the effectiveness of the entropy-regularized objective in our SAC framework. The ORR curve reveals another core driver of our performance. While baselines plateau around $0.09-0.16$, ST-SACA continuously learns to expand its service coverage, stabilizing at $\approx 0.18$. This implies that as training progresses, the Spatio-Temporal Actor becomes increasingly proficient at coordinating fleet resources to cover "hotspot" areas dynamically.
 
 \begin{table}[htbp]
-\caption{\textcolor{blue}{Performance Comparison under Non-Stationary Scenario}}
+\caption{\textcolor{blue}{Performance Comparison under Time-Varying Demand}}
 \label{tab:rev_uncertainty}
 \begin{center}
 \color{blue}
@@ -771,7 +796,7 @@ JDRL-POMO & 24.86 & 24.50 & \textbf{9.65} & 0.09 \\
         \includegraphics[width=0.47\columnwidth]{fig/comparison_orr.pdf}
         \label{fig:curve_orr}
     }
-    \caption{\textcolor{blue}{Training curves of different methods under non-stationary scenarios. The subplots illustrate the evolution of Reward, Profit, Cost, and ORR during the training process. ST-SACA (red solid line) outperforms comparative methods by achieving better convergence values, demonstrating faster convergence and better stability in non-stationary environments.}}
+    \caption{\textcolor{blue}{Training curves of different methods under time-varying demand. The subplots illustrate the evolution of Reward, Profit, Cost, and ORR during the training process. ST-SACA (red solid line) outperforms comparative methods by achieving better convergence values, demonstrating faster convergence and better stability across fluctuation amplitudes.}}
     \label{fig:exper_curve}
 \end{figure}
 
@@ -779,7 +804,7 @@ JDRL-POMO & 24.86 & 24.50 & \textbf{9.65} & 0.09 \\
 
 To further investigate the robustness of ST-SACA, we evaluate the performance of different models under varying uncertainty configurations. By increasing $A$ and $\omega$, the environment exhibits higher variability, presenting a greater challenge for stable decision-making. Table~\ref{tab:uncertainty_full} summarizes the performance gap between ST-SACA and the strongest performing baseline under four distinct uncertainty settings. 
 
-In the scenario with low uncertainty ($A=1, \omega=0.5$), the environment is relatively stable. Here, the performance gap between ST-SACA and the best baseline is marginal (+2.8\%). This observation is consistent with expectations, as baselines can perform adequately when traffic demand is stationary. However, as the environment becomes more volatile, the superiority of ST-SACA becomes increasingly pronounced. The gap further widens to $16.1\%$, which demonstrates that ST-SACA can exploit the structural dependencies in the station network to capture dynamic opportunities that baselines miss. This confirms that our framework is reliable for real-world deployment where extreme demand volatility is inevitable.
+In the scenario with low uncertainty ($A=1, \omega=0.5$), the environment is relatively stable. Here, the performance gap between ST-SACA and the best baseline is marginal (+2.8\%). This observation is consistent with expectations, as baselines can perform adequately when traffic demand is stationary. However, as the environment becomes more volatile, the superiority of ST-SACA becomes increasingly pronounced. The gap further widens to $16.1\%$, which demonstrates that ST-SACA can exploit the structural dependencies in the station network to capture dynamic opportunities that baselines miss. These results suggest that the framework remains effective under the tested fluctuation amplitudes; deployment under extreme volatility requires further validation.
 
 % \begin{table}[htbp]
 % \caption{Profit under Differnt Uncertainty}
@@ -800,7 +825,7 @@ In the scenario with low uncertainty ($A=1, \omega=0.5$), the environment is rel
 % \end{table}
 
 \begin{table}[htbp]
-\caption{\textcolor{blue}{Profit Comparison under Different Uncertainty}}
+\caption{\textcolor{blue}{Reward Comparison under Different Uncertainty}}
 \label{tab:uncertainty_full}
 \begin{center}
 \color{blue}
@@ -823,7 +848,7 @@ $A=10, \omega=1$  & \textbf{38.70} & 20.49 & 33.34 & 24.86 \\
 To verify the contribution of each component within ST-SACA, we compared the full model against three distinct variants. The results, summarized in Table~\ref{tab:ablation}, isolate the impact of the Spatio-Temporal Adaptive Actor, the Attention-Based Routing, and the service-oriented reward design.
 
 \textbf{1) Impact of Spatio-Temporal Adaptive Actor (w/o Spatial Attn.):} 
-Replacing the spatio-temporal attention mechanism with a MLP results in a catastrophic performance degradation. The reward drops by 47.1\%, and the ORR is halved, which indicates that without explicit modeling of topological dependencies, the agent collapses into a ``conservative'' strategy by refusing to serve distant orders. This proves that the spatial attention mechanism is essential for encouraging the agent to explore and exploit spatially distributed demand.
+Replacing the spatial attention mechanism with a MLP results in a catastrophic performance degradation. The reward drops by 47.1\%, and the ORR is halved, which indicates that without explicit modeling of topological dependencies, the agent collapses into a ``conservative'' strategy by refusing to serve distant orders. This proves that the spatial attention mechanism is essential for encouraging the agent to explore and exploit spatially distributed demand.
 
 \textbf{2) Impact of Learned Routing (w/o Learned Route):} 
 Substituting the learned routing module with a greedy nearest-neighbor heuristic yields a significantly lower reward. This performance gap demonstrates that the attention-based routing module serves as a superior solver that generates proper routes for complex batches. This high-efficiency routing capability empowers the ST-SACA framework to accept and fulfill more challenging order combinations.
@@ -873,7 +898,7 @@ ST-SACA & 4.7 & 5.9 & 8.6 & 11.9 & 12.5 \\
 \end{table}
 
 \subsection{Sensitivity Analysis}
-We evaluate the sensitivity of the hyper-parameter $\lambda_{orr}$ to analyze its impact on model performance. As illustrated in Figure~\ref{fig:sen}, both average profit and average ORR exhibit a consistent upward trend as $\lambda_{orr}$ increases from 0 to 400. This indicates that properly responding to more orders is synergistic with profit maximization, as serving more passengers generates additional revenue that outweighs the marginal operational costs. However, when $\lambda_{orr}$ exceeds 400, both metrics begin to decline. This suggests that an excessive weight on ORR may lead to accepting inefficient orders, thereby harming overall profitability and fleet efficiency. It is worth noting that in our main comparison experiments, we adopted a conservative setting of $\lambda_{orr}=4$. This choice demonstrates that ST-SACA is capable of outperforming state-of-the-art baselines even without aggressive parameter tuning, while the sensitivity analysis highlights the framework's potential for further performance gains under optimized configurations.
+We evaluate the sensitivity of the hyper-parameter $\lambda_{orr}$ to analyze its impact on model performance. As illustrated in Figure~\ref{fig:sen}, both average profit and average ORR exhibit a consistent upward trend as $\lambda_{orr}$ increases from 0 to 400. This indicates that properly responding to more orders is synergistic with profit maximization, as serving more passengers generates additional revenue that outweighs the marginal operational costs. However, when $\lambda_{orr}$ exceeds 400, both metrics begin to decline. This suggests that an excessive weight on ORR may lead to accepting inefficient orders, thereby harming overall profitability and fleet efficiency. It is worth noting that in our main comparison experiments, we adopted a conservative setting of $\lambda_{orr}=4$. The sensitivity analysis sweeps $\lambda_{orr}$ from 0 to 500, whereas the main experiments fix $\lambda_{orr}=4$; the absolute values in Figure~\ref{fig:sen} are therefore not directly comparable to those in Table~\ref{tab:rev_uncertainty}. This choice demonstrates that ST-SACA is capable of outperforming state-of-the-art baselines even without aggressive parameter tuning, while the sensitivity analysis highlights the framework's potential for further performance gains under optimized configurations.
 
 \begin{figure}[htbp]
     \centering
@@ -929,7 +954,7 @@ We evaluate the sensitivity of the hyper-parameter $\lambda_{orr}$ to analyze it
 
 \color{blue}
 
-We conduct a case study to analyze the differences in pricing policies between our proposed ST-SACA and baselines. Figure~\ref{fig:pot} reflects the potential demand of 30 stations. Figure~\ref{fig:price_st_saca} and the baseline figures illustrate the pricing policies. For the station (5,5), which exhibits high potential demand, ST-SACA determines a significantly higher price than all three baselines. This indicates that ST-SACA can effectively explore higher prices for stations with high demand to maximize profit. In contrast, JDRL-POMO tends to set conservatively low prices across the region, while SACA and GRC-ELG fail to capture the peak demand at specific stations. Furthermore, for the peripheral stations in column 4, ST-SACA maintains appropriate high prices to filter out improper orders that might cause detours, whereas the baselines determine lower prices, potentially leading to inefficient routing. Due to the superior spatio-temporal awareness, ST-SACA demonstrates a more effective pricing strategy.
+We conduct a case study to analyze the differences in pricing policies between our proposed ST-SACA and baselines. Figure~\ref{fig:pot} reflects the potential demand of 30 stations. Figure~\ref{fig:price_st_saca} and the baseline figures illustrate the pricing policies. For the station (5,5), which exhibits high potential demand, ST-SACA determines a significantly higher price than all three baselines. This indicates that ST-SACA can effectively explore higher prices for stations with high demand to maximize profit. In contrast, JDRL-POMO tends to set conservatively low prices across the region, while SACA and GRC-ELG fail to capture the peak demand at specific stations. Furthermore, for the peripheral stations in column 4, ST-SACA maintains appropriate high prices to filter out improper orders that might cause detours, whereas the baselines determine lower prices, potentially leading to inefficient routing. Due to the superior spatial awareness of station-level demand, ST-SACA demonstrates a more effective pricing strategy.
 
 
 
@@ -941,7 +966,9 @@ We conduct a case study to analyze the differences in pricing policies between o
 % Deploying ST-SACA in a real-world bus-booking system may face the \textit{cold start} problem, where the model lacks sufficient interaction data initially. To address this, we can pre-train the model using a simulator built from historical data (as done in this paper) before online fine-tuning. Additionally, safety constraints should be strictly enforced during the exploration phase to ensure service quality.
 
 \section{Conclusion}
-In this paper, we focus on the emerging Bus-Booking service and systematically formulate the Joint Dispatching, Routing, and Pricing (JDRP) problem. To bridge the gap between theoretical simplification and real-world volatility, we explicitly distinguish between two problem variants: the Stationary JDRP (S-JDRP) for stable environments and the Robust JDRP (R-JDRP) under dynamic uncertainty. We propose ST-SACA, a unified end-to-end framework capable of addressing both variants effectively. Distinguished by its Spatio-Temporal Adaptive Actor, ST-SACA integrates geographical coordinates with demand data via a self-attention mechanism. This design captures critical topological dependencies, enabling the agent to learn high-quality strategies while maintaining superior adaptability and robustness. Furthermore, we align the algorithmic optimization with market realities by constructing distance-aware demand-supply functions and a composite reward scheme, balancing profitability with service quality. Extensive experiments on real-world datasets demonstrate that ST-SACA significantly outperforms state-of-the-art baselines in terms of long-term profit and solution quality across both stationary and non-stationary scenarios.
+In this paper, we focus on the emerging Bus-Booking service and systematically formulate the Joint Dispatching, Routing, and Pricing (JDRP) problem. To bridge the gap between theoretical simplification and real-world volatility, we explicitly distinguish between two problem variants: the Stationary JDRP (S-JDRP) for stable environments and the Robust JDRP (R-JDRP) under time-varying demand. We propose ST-SACA, a unified end-to-end framework capable of addressing both variants effectively. Distinguished by its Spatio-Temporal Adaptive Actor, ST-SACA integrates geographical coordinates with demand data via a self-attention mechanism. This design captures critical topological dependencies, enabling the agent to learn high-quality strategies while maintaining adaptability across fluctuation amplitudes. Furthermore, we align the algorithmic optimization with market realities by constructing distance-aware demand-supply functions and a composite reward scheme, balancing profitability with service quality. Extensive experiments on real-world datasets demonstrate that ST-SACA significantly outperforms state-of-the-art baselines in terms of long-term profit and solution quality across both stationary and time-varying scenarios.
+
+\textbf{Scope and limitations.} The results are obtained in a realistic case study built from Chengdu night-time ride-hailing trajectories. They support the empirical effectiveness of coordinate-aware spatial attention and joint decision-making under the tested stationary and time-varying demand settings. Generalization to spatial origin-destination shifts, abrupt demand shocks, supply disruptions, and other cities or station granularities remains to be verified. The actor operates on a single-slot state; temporal variation enters through the time-varying demand intensity, not through a history window.
 
 \color{black}
 
