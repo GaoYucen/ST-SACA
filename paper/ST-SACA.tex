@@ -746,8 +746,7 @@ SACA & 23.25 & 0.10 & 12.17 & 53.97 & 0.21 & 15.85\\
 \color{blue}
 
 \subsubsection{Performance under Time-Varying Demand}
-% TODO(decision): Table V currently states A=5, but its reported values correspond to the A=10 row of Table VI. Confirm the intended setting before submission.
-To evaluate the performance of our framework against time-varying demand, we conducted experiments with perturbation parameters $A=5$ and $\omega=1$. Table~\ref{tab:rev_uncertainty} summarizes the quantitative results, and Figure~\ref{fig:exper_curve} illustrates the training dynamics across different metrics. ST-SACA not only yields higher profit but also ensures better public service quality and training stability under uncertain conditions.
+To evaluate the performance of our framework against time-varying demand, we conducted experiments with perturbation parameters $A=10$ and $\omega=1$. Table~\ref{tab:rev_uncertainty} summarizes the quantitative results, and Figure~\ref{fig:exper_curve} illustrates the training dynamics across different metrics. ST-SACA not only yields higher profit but also ensures better public service quality and training stability under uncertain conditions.
 
 As shown in Table~\ref{tab:rev_uncertainty}, ST-SACA demonstrates a significant performance advantage over all baselines. Specifically, ST-SACA achieves the highest reward and profit, which demonstrates that by explicitly modeling topological dependencies via the Spatio-Temporal Adaptive Actor, ST-SACA effectively mitigates the impact of random noise, improving decision stability. Besides, ST-SACA strikes the best balance between operational cost and service quality. It achieves the highest ORR while maintaining a moderate cost. This demonstrates that our model is capable of identifying and fulfilling high-value orders—even those requiring complex routing—thereby maximizing the composite Total Reward. In contrast, JDRL-POMO's ORR is remarkably low, indicating a conservative strategy that prioritizes cost minimization over service coverage. GRC-ELG achieves a better ORR but incurs the highest operational cost, suggesting an inefficient routing logic when demand density increases.
 
@@ -903,7 +902,7 @@ We evaluate the sensitivity of the hyper-parameter $\lambda_{orr}$ to analyze it
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.6\linewidth]{fig/parameter_sensitivity_orr.pdf}
-    \caption{\textcolor{blue}{Performance comparison showing the correlation between Average ORR and Average Profit across different ORR weights.}}
+\caption{\textcolor{blue}{Sensitivity analysis of $\lambda_{orr}$. The sweep uses $\lambda_{orr}\in[0,500]$, whereas the main experiments use $\lambda_{orr}=4$. The absolute profit values therefore correspond to a different operating point and are not directly comparable to Table~\ref{tab:rev_uncertainty}.}}
     \label{fig:sen}
 \end{figure}
 
